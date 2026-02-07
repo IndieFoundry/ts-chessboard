@@ -5,7 +5,7 @@ import { resolve } from 'path';
 export default defineConfig({
   test: {
     globals: true,
-    exclude: ['**/node_modules/**', '**/chessground/**'],
+    exclude: ['**/node_modules/**'],
     include: ['src/**/*.test.{ts,tsx}'],
   },
   plugins: [

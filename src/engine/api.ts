@@ -19,7 +19,7 @@ export interface Api {
   /** Reconfigure the instance. Board will be animated if animations are enabled. */
   set(config: Config): void;
 
-  /** Read chessground state; write at your own risks. */
+  /** Read board state; write at your own risks. */
   state: State;
 
   /** Get the position as a FEN string (only contains pieces, no flags) */

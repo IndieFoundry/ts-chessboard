@@ -1,8 +1,5 @@
 /**
  * Board - Piece positions using bitboards
- * Adapted from chessops by Niklas Fiekas
- * https://github.com/niklasf/chessops
- * License: GPL-3.0
  */
 
 import { SquareSet } from './squareSet';

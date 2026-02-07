@@ -12,7 +12,7 @@ import { createElement as createSVG, setAttributes, createDefs } from './svg/sha
  * Renders the board DOM structure
  *
  * DOM hierarchy:
- * .cg-wrap (element passed to Chessground)
+ * .cg-wrap (root element)
  *   cg-container
  *     cg-board
  *     svg.cg-shapes

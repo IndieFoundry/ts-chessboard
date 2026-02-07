@@ -1,5 +1,5 @@
 import { useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
-import { Chessground } from './engine/controller';
+import { createBoard } from './engine/controller';
 import type { Api } from './engine/api';
 import type { Config } from './engine/config';
 
@@ -18,10 +18,10 @@ export const Chessboard = forwardRef<ChessboardRef, ChessboardProps>(
     const apiRef = useRef<Api | null>(null);
     const configRef = useRef<Config>(config);
 
-    // Initialize chessground
+    // Initialize the board
     useEffect(() => {
       if (boardRef.current && !apiRef.current) {
-        apiRef.current = Chessground(boardRef.current, config);
+        apiRef.current = createBoard(boardRef.current, config);
         configRef.current = config;
       }
       return () => {

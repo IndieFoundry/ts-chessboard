@@ -1,7 +1,5 @@
 /**
- * Chess types - adapted from chessops by Niklas Fiekas
- * https://github.com/niklasf/chessops
- * License: GPL-3.0
+ * Core chess type definitions
  */
 
 export const FILE_NAMES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] as const;

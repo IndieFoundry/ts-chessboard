@@ -1,8 +1,5 @@
 /**
- * SquareSet - Bitboard implementation
- * Adapted from chessops by Niklas Fiekas
- * https://github.com/niklasf/chessops
- * License: GPL-3.0
+ * SquareSet - Immutable bitboard implementation for efficient square set operations
  */
 
 import type { Color, Square } from './types';

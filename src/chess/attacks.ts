@@ -1,8 +1,5 @@
 /**
- * Attack and ray computations using Hyperbola Quintessence
- * Adapted from chessops by Niklas Fiekas
- * https://github.com/niklasf/chessops
- * License: GPL-3.0
+ * Attack and ray computations using Hyperbola Quintessence algorithm
  */
 
 import { SquareSet } from './squareSet';

@@ -1,8 +1,5 @@
 /**
  * Setup - Chess position representation
- * Adapted from chessops by Niklas Fiekas
- * https://github.com/niklasf/chessops
- * License: GPL-3.0
  */
 
 import { Board } from './board';

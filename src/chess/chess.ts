@@ -1,8 +1,5 @@
 /**
  * Chess - Legal move generation for standard chess
- * Adapted from chessops by Niklas Fiekas
- * https://github.com/niklasf/chessops
- * License: GPL-3.0
  */
 
 import {

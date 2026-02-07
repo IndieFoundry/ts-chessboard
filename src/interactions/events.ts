@@ -40,7 +40,7 @@ export function bindBoard(s: State, onResize: () => void): void {
 export function bindDocument(s: State, onResize: () => void): Unbind {
   const unbinds: Unbind[] = [];
 
-  if (!('ResizeObserver' in window)) unbinds.push(unbindable(document.body, 'chessground.resize', onResize));
+  if (!('ResizeObserver' in window)) unbinds.push(unbindable(document.body, 'board.resize', onResize));
 
   if (!s.viewOnly) {
     const onmove = dragOrDraw(s, drag.move, draw.move);

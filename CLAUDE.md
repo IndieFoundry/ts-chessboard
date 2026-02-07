@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-React chessboard component (`@indiefoundry/chessboard`). A modular, well-architected chess UI library for React applications. Based on Lichess Chessground but with a clean, layered architecture. The component handles only UI - legal moves must be provided externally via `movable.dests`.
+React chessboard component (`@indiefoundry/chessboard`). A modular, well-architected chess UI library for React applications with a clean, layered architecture. The component handles only UI - legal moves must be provided externally via `movable.dests`.
 
 ## Commands
 
@@ -34,7 +34,7 @@ src/
 │   ├── state.ts                # State interface and defaults
 │   ├── config.ts               # Configuration and merging
 │   ├── api.ts                  # Public API (move, setPieces, etc.)
-│   └── controller.ts           # Chessground factory and lifecycle
+│   └── controller.ts           # Board factory and lifecycle
 │
 ├── rendering/                  # DOM/SVG rendering
 │   ├── board-dom.ts            # Board DOM structure creation

@@ -1,8 +1,5 @@
 /**
- * Chess logic module
- * Adapted from chessops by Niklas Fiekas
- * https://github.com/niklasf/chessops
- * License: GPL-3.0
+ * Chess logic module - legal move generation and game state
  */
 
 // Types

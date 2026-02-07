@@ -45,11 +45,13 @@
     "chess",
     "chessboard",
     "react",
-    "typescript",
-    "lichess"
+    "typescript"
   ],
   "repository": {
     "type": "git",
     "url": "https://github.com/indiefoundry/ts-chessboard"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
   }
 }

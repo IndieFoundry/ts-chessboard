@@ -1,8 +1,5 @@
 /**
- * Chess utilities
- * Adapted from chessops by Niklas Fiekas
- * https://github.com/niklasf/chessops
- * License: GPL-3.0
+ * Chess utility functions
  */
 
 import { CastlingSide, Color, FILE_NAMES, isDrop, Move, RANK_NAMES, Role, Square, SquareName } from './types';

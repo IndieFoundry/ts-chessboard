@@ -18,7 +18,7 @@ import { memo } from '../utils/memo';
  * Alternative initialization using an options object
  */
 export function initModule({ el, config }: { el: HTMLElement; config?: Config }): Api {
-  return Chessground(el, config);
+  return createBoard(el, config);
 }
 
 /**
@@ -28,7 +28,7 @@ export function initModule({ el, config }: { el: HTMLElement; config?: Config })
  * @param config - Optional configuration options
  * @returns The API for controlling the board
  */
-export function Chessground(element: HTMLElement, config?: Config): Api {
+export function createBoard(element: HTMLElement, config?: Config): Api {
   const maybeState: State | HeadlessState = defaults();
 
   configure(maybeState, config || {});
