@@ -1,6 +1,6 @@
 /**
- * Chess logic module - legal move generation and game state
- * Based on work by Niklas Fiekas - Licensed under GPL-3.0
+ * Built-in chess engine for @indiefoundry/chessboard.
+ * Provides legal move generation, position validation, and game state detection.
  */
 
 // Types

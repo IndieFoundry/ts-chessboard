@@ -14,7 +14,11 @@ export type { Api } from './engine/api';
 // Drawing types
 export type { DrawShape, DrawBrush, DrawBrushes, DrawModifiers, DrawShapePiece } from './interactions/draw-handler';
 
+// Chess engine (legal move generation)
+// Re-export chess module under a namespace to avoid conflicts with core types
+export * as Chess from './chess';
+
 // CSS imports
 import './styles/base.css';
 import './styles/theme-brown.css';
-import './styles/pieces-cburnett.css';
+import './styles/pieces-staunty.css';

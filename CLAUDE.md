@@ -61,10 +61,10 @@ src/
 │   ├── memo.ts                 # Memoization
 │   └── timer.ts                # Timing utilities
 │
-├── styles/                     # CSS
+├── styles/                     # CSS (all use CSS custom properties for theming)
 │   ├── base.css                # Base layout styles
-│   ├── theme-brown.css         # Brown board theme
-│   └── pieces-cburnett.css     # CBurnett piece set
+│   ├── theme-brown.css         # Brown board theme (customizable via --cg-* vars)
+│   └── pieces-cburnett.css     # CBurnett piece set (customizable via --cg-piece-* vars)
 │
 └── demo/                       # Interactive demo app
     ├── App.tsx
@@ -88,6 +88,16 @@ Core types in `src/core/types.ts`:
 - `Key`: Square identifier like `'e4'`
 - `Pieces`: `Map<Key, Piece>` - board position
 - `Dests`: `Map<Key, Key[]>` - legal destinations per square
+
+## Theming
+
+All visual styles use CSS custom properties, allowing users to customize:
+- Board colors: `--cg-board-light`, `--cg-board-dark`
+- Highlights: `--cg-highlight-last-move`, `--cg-highlight-selected`, `--cg-highlight-check`
+- Move indicators: `--cg-move-dest`, `--cg-move-dest-hover`
+- Pieces: `--cg-piece-{role}-{color}` (e.g., `--cg-piece-king-white`)
+
+See `README.md` for full theming documentation.
 
 ## Build Output
 

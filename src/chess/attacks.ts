@@ -1,6 +1,7 @@
 /**
- * Attack and ray computations using Hyperbola Quintessence algorithm
- * Based on work by Niklas Fiekas - Licensed under GPL-3.0
+ * Sliding piece attack generation using o^(o-2r) technique.
+ * Computes bishop, rook, and queen attacks given occupied squares.
+ * Part of @indiefoundry/chessboard's built-in chess engine.
  */
 
 import { SquareSet } from './squareSet';
@@ -57,7 +58,8 @@ const ANTI_DIAG_RANGE = tabulate(sq => {
   return (shift >= 0 ? diag.shl64(shift) : diag.shr64(-shift)).without(sq);
 });
 
-const hyperbola = (bit: SquareSet, range: SquareSet, occupied: SquareSet): SquareSet => {
+/** Compute sliding attacks using o^(o-2r) trick with byte swap for reverse direction. */
+const slidingMoves = (bit: SquareSet, range: SquareSet, occupied: SquareSet): SquareSet => {
   let forward = occupied.intersect(range);
   let reverse = forward.bswap64();
   forward = forward.minus64(bit);
@@ -66,7 +68,7 @@ const hyperbola = (bit: SquareSet, range: SquareSet, occupied: SquareSet): Squar
 };
 
 const fileAttacks = (square: Square, occupied: SquareSet): SquareSet =>
-  hyperbola(SquareSet.fromSquare(square), FILE_RANGE[square], occupied);
+  slidingMoves(SquareSet.fromSquare(square), FILE_RANGE[square], occupied);
 
 const rankAttacks = (square: Square, occupied: SquareSet): SquareSet => {
   const range = RANK_RANGE[square];
@@ -80,7 +82,7 @@ const rankAttacks = (square: Square, occupied: SquareSet): SquareSet => {
 /** Gets squares attacked or defended by a bishop on `square`, given `occupied` squares. */
 export const bishopAttacks = (square: Square, occupied: SquareSet): SquareSet => {
   const bit = SquareSet.fromSquare(square);
-  return hyperbola(bit, DIAG_RANGE[square], occupied).xor(hyperbola(bit, ANTI_DIAG_RANGE[square], occupied));
+  return slidingMoves(bit, DIAG_RANGE[square], occupied).xor(slidingMoves(bit, ANTI_DIAG_RANGE[square], occupied));
 };
 
 /** Gets squares attacked or defended by a rook on `square`, given `occupied` squares. */

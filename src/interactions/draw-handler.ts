@@ -81,7 +81,7 @@ export function start(state: State, e: MouchEvent): void {
   if (e.touches && e.touches.length > 1) return;
   e.stopPropagation();
   e.preventDefault();
-  e.ctrlKey ? unselect(state as any) : cancelMove(state as any);
+  e.ctrlKey ? unselect(state) : cancelMove(state);
   const pos = eventPosition(e)!,
     orig = getKeyAtDomPos(pos, whitePov(state), state.dom.bounds());
   if (!orig) return;

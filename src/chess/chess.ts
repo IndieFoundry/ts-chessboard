@@ -1,6 +1,7 @@
 /**
- * Chess - Legal move generation for standard chess
- * Based on work by Niklas Fiekas - Licensed under GPL-3.0
+ * Legal move generation and game state for standard chess.
+ * Validates positions, generates legal moves, and detects checkmate/stalemate.
+ * Part of @indiefoundry/chessboard's built-in chess engine.
  */
 
 import {

@@ -85,7 +85,7 @@ export interface Api {
  */
 export function start(state: State, redrawAll: Redraw): Api {
   function toggleOrientation(): void {
-    moves.toggleOrientation(state as any);
+    moves.toggleOrientation(state);
     redrawAll();
   }
 
@@ -103,28 +103,28 @@ export function start(state: State, redrawAll: Redraw): Api {
     toggleOrientation,
 
     setPieces(pieces): void {
-      anim(state => moves.setPieces(state as any, pieces), state);
+      anim(state => moves.setPieces(state, pieces), state);
     },
 
     selectSquare(key, force): void {
-      if (key) anim(state => moves.selectSquare(state as any, key, force), state);
+      if (key) anim(state => moves.selectSquare(state, key, force), state);
       else if (state.selected) {
-        moves.unselect(state as any);
+        moves.unselect(state);
         state.dom.redraw();
       }
     },
 
     move(orig, dest): void {
-      anim(state => moves.baseMove(state as any, orig, dest), state);
+      anim(state => moves.baseMove(state, orig, dest), state);
     },
 
     newPiece(piece, key): void {
-      anim(state => moves.baseNewPiece(state as any, piece, key), state);
+      anim(state => moves.baseNewPiece(state, piece, key), state);
     },
 
     playPremove(): boolean {
       if (state.premovable.current) {
-        if (anim(state => moves.playPremove(state as any), state)) return true;
+        if (anim(state => moves.playPremove(state), state)) return true;
         state.dom.redraw();
       }
       return false;
@@ -132,7 +132,7 @@ export function start(state: State, redrawAll: Redraw): Api {
 
     playPredrop(validate): boolean {
       if (state.predroppable.current) {
-        const result = moves.playPredrop(state as any, validate);
+        const result = moves.playPredrop(state, validate);
         state.dom.redraw();
         return result;
       }
@@ -140,23 +140,23 @@ export function start(state: State, redrawAll: Redraw): Api {
     },
 
     cancelPremove(): void {
-      render(state => moves.unsetPremove(state as any), state);
+      render(state => moves.unsetPremove(state), state);
     },
 
     cancelPredrop(): void {
-      render(state => moves.unsetPredrop(state as any), state);
+      render(state => moves.unsetPredrop(state), state);
     },
 
     cancelMove(): void {
       render(state => {
-        moves.cancelMove(state as any);
+        moves.cancelMove(state);
         dragCancel(state);
       }, state);
     },
 
     stop(): void {
       render(state => {
-        moves.stop(state as any);
+        moves.stop(state);
         dragCancel(state);
       }, state);
     },
@@ -184,7 +184,7 @@ export function start(state: State, redrawAll: Redraw): Api {
     },
 
     destroy(): void {
-      moves.stop(state as any);
+      moves.stop(state);
       state.dom.unbind && state.dom.unbind();
       state.dom.destroyed = true;
     },

@@ -1,6 +1,6 @@
 /**
- * Chess utility functions
- * Based on work by Niklas Fiekas - Licensed under GPL-3.0
+ * Chess utility functions for square/piece conversion and UCI parsing.
+ * Part of @indiefoundry/chessboard's built-in chess engine.
  */
 
 import { CastlingSide, Color, FILE_NAMES, isDrop, Move, RANK_NAMES, Role, Square, SquareName } from './types';

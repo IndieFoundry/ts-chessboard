@@ -1,6 +1,7 @@
 /**
- * SquareSet - Immutable bitboard implementation for efficient square set operations
- * Based on work by Niklas Fiekas - Licensed under GPL-3.0
+ * Immutable 64-bit set for representing chess squares.
+ * Uses two 32-bit integers (lo/hi) since JavaScript lacks native 64-bit integers.
+ * Part of @indiefoundry/chessboard's built-in chess engine.
  */
 
 import type { Color, Square } from './types';

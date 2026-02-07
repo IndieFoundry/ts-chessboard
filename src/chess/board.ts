@@ -1,6 +1,7 @@
 /**
- * Board - Piece positions using bitboards
- * Based on work by Niklas Fiekas - Licensed under GPL-3.0
+ * Board representation storing piece positions using bitboards.
+ * Each piece type and color has its own SquareSet for efficient operations.
+ * Part of @indiefoundry/chessboard's built-in chess engine.
  */
 
 import { SquareSet } from './squareSet';

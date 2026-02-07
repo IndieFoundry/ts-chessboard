@@ -33,8 +33,8 @@ export function cancelDropMode(s: State): void {
 export function drop(s: State, e: MouchEvent): void {
   if (!s.dropmode.active) return;
 
-  moves.unsetPremove(s as any);
-  moves.unsetPredrop(s as any);
+  moves.unsetPremove(s);
+  moves.unsetPredrop(s);
 
   const piece = s.dropmode.piece;
 
@@ -42,7 +42,7 @@ export function drop(s: State, e: MouchEvent): void {
     s.pieces.set('a0', piece);
     const position = eventPosition(e);
     const dest = position && moves.getKeyAtDomPos(position, moves.whitePov(s), s.dom.bounds());
-    if (dest) moves.dropNewPiece(s as any, 'a0', dest);
+    if (dest) moves.dropNewPiece(s, 'a0', dest);
   }
   s.dom.redraw();
 }

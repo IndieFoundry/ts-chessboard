@@ -3,6 +3,7 @@ import { Chessboard, ChessboardRef } from '../';
 import type { Key, Color, Dests, Role, Piece } from '../core/types';
 import type { DrawShape } from '../interactions/draw-handler';
 import { Chess, makeFen, makeSquare, parseSquare } from '../chess';
+import './themes.css';
 
 // Promotion piece choices
 const PROMOTION_ROLES: Role[] = ['queen', 'rook', 'bishop', 'knight'];
@@ -14,7 +15,9 @@ interface PendingPromotion {
 }
 
 /**
- * Convert Chess legal moves to chessboard Dests format
+ * Convert Chess legal moves to chessboard Dests format.
+ * Converts castling from "king captures rook" notation (e1-h1) to
+ * standard notation (e1-g1) where the king lands.
  */
 function chessToDestsForColor(chess: Chess, color: Color): Dests {
   const dests: Dests = new Map();
@@ -24,12 +27,26 @@ function chessToDestsForColor(chess: Chess, color: Color): Dests {
 
   const allDests = chess.allDests();
   for (const [square, squareSet] of allDests) {
+    const origKey = makeSquare(square) as Key;
+    const piece = chess.board.get(square);
+    const isKing = piece?.role === 'king';
+
     const destKeys: Key[] = [];
     for (const dest of squareSet) {
-      destKeys.push(makeSquare(dest) as Key);
+      let destKey = makeSquare(dest) as Key;
+
+      // Convert castling destinations from rook square to king landing square
+      if (isKing) {
+        if (origKey === 'e1' && destKey === 'h1') destKey = 'g1';
+        else if (origKey === 'e1' && destKey === 'a1') destKey = 'c1';
+        else if (origKey === 'e8' && destKey === 'h8') destKey = 'g8';
+        else if (origKey === 'e8' && destKey === 'a8') destKey = 'c8';
+      }
+
+      destKeys.push(destKey);
     }
     if (destKeys.length > 0) {
-      dests.set(makeSquare(square) as Key, destKeys);
+      dests.set(origKey, destKeys);
     }
   }
   return dests;
@@ -56,6 +73,8 @@ export function App() {
   const [playerColor] = useState<Color>('white');
   const [pendingPromotion, setPendingPromotion] = useState<PendingPromotion | null>(null);
   const [isInCheck, setIsInCheck] = useState(false);
+  const [boardTheme, setBoardTheme] = useState<'brown' | 'green' | 'blue' | 'purple'>('brown');
+  const [pieceSet, setPieceSet] = useState<'staunty' | 'cburnett'>('staunty');
 
   // Compute FEN from chess position
   const fen = useMemo(() => {
@@ -192,7 +211,6 @@ export function App() {
     // Only process if we're expecting a player move
     if (!expectingPlayerMoveRef.current) return;
 
-    console.log('Player move:', orig, dest);
     expectingPlayerMoveRef.current = false;
 
     setLastMove([orig, dest]);
@@ -310,7 +328,7 @@ export function App() {
             check: true,
           }}
           coordinates={true}
-          className="cg-wrap"
+          className={`cg-wrap theme-${boardTheme} pieces-${pieceSet}`}
           style={{ width: '100%', aspectRatio: '1' }}
         />
 
@@ -348,6 +366,34 @@ export function App() {
         <button onClick={resetBoard} style={buttonStyle}>
           Reset
         </button>
+      </div>
+
+      {/* Theme selector */}
+      <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <label style={{ fontSize: '0.875rem', opacity: 0.8 }}>Board:</label>
+          <select
+            value={boardTheme}
+            onChange={(e) => setBoardTheme(e.target.value as typeof boardTheme)}
+            style={selectStyle}
+          >
+            <option value="brown">Brown</option>
+            <option value="green">Green (chess.com)</option>
+            <option value="blue">Blue (lichess)</option>
+            <option value="purple">Purple</option>
+          </select>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <label style={{ fontSize: '0.875rem', opacity: 0.8 }}>Pieces:</label>
+          <select
+            value={pieceSet}
+            onChange={(e) => setPieceSet(e.target.value as typeof pieceSet)}
+            style={selectStyle}
+          >
+            <option value="staunty">Staunty</option>
+            <option value="cburnett">CBurnett</option>
+          </select>
+        </div>
       </div>
 
       {gameStatus && (
@@ -396,6 +442,16 @@ const buttonStyle: React.CSSProperties = {
 const activeButtonStyle: React.CSSProperties = {
   ...buttonStyle,
   background: '#4a9',
+};
+
+const selectStyle: React.CSSProperties = {
+  padding: '0.4rem 0.6rem',
+  fontSize: '0.875rem',
+  background: '#444',
+  color: '#fff',
+  border: '1px solid #666',
+  borderRadius: '4px',
+  cursor: 'pointer',
 };
 
 // Get Unicode chess piece symbol

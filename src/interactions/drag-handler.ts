@@ -59,16 +59,16 @@ export function start(s: State, e: MouchEvent): void {
   const hadPredrop = !!s.predroppable.current;
   s.stats.ctrlKey = e.ctrlKey;
 
-  if (s.selected && moves.canMove(s as any, s.selected, orig)) {
-    anim(state => moves.selectSquare(state as any, orig), s);
+  if (s.selected && moves.canMove(s, s.selected, orig)) {
+    anim(state => moves.selectSquare(state, orig), s);
   } else {
-    moves.selectSquare(s as any, orig);
+    moves.selectSquare(s, orig);
   }
 
   const stillSelected = s.selected === orig;
   const element = pieceElementByKey(s, orig);
 
-  if (piece && element && stillSelected && moves.isDraggable(s as any, orig)) {
+  if (piece && element && stillSelected && moves.isDraggable(s, orig)) {
     s.draggable.current = {
       orig,
       piece,
@@ -91,8 +91,8 @@ export function start(s: State, e: MouchEvent): void {
     }
     processDrag(s);
   } else {
-    if (hadPremove) moves.unsetPremove(s as any);
-    if (hadPredrop) moves.unsetPredrop(s as any);
+    if (hadPremove) moves.unsetPremove(s);
+    if (hadPredrop) moves.unsetPredrop(s);
   }
   s.dom.redraw();
 }
@@ -189,17 +189,17 @@ export function end(s: State, e: MouchEvent): void {
     return;
   }
 
-  moves.unsetPremove(s as any);
-  moves.unsetPredrop(s as any);
+  moves.unsetPremove(s);
+  moves.unsetPredrop(s);
 
   const eventPos = eventPosition(e) || cur.pos;
   const dest = moves.getKeyAtDomPos(eventPos, moves.whitePov(s), s.dom.bounds());
 
   if (dest && cur.started && cur.orig !== dest) {
-    if (cur.newPiece) moves.dropNewPiece(s as any, cur.orig, dest, cur.force);
+    if (cur.newPiece) moves.dropNewPiece(s, cur.orig, dest, cur.force);
     else {
       s.stats.ctrlKey = e.ctrlKey;
-      if (moves.userMove(s as any, cur.orig, dest)) s.stats.dragged = true;
+      if (moves.userMove(s, cur.orig, dest)) s.stats.dragged = true;
     }
   } else if (cur.newPiece) {
     s.pieces.delete(cur.orig);
@@ -209,8 +209,8 @@ export function end(s: State, e: MouchEvent): void {
   }
 
   if ((cur.orig === cur.previouslySelected || cur.keyHasChanged) && (cur.orig === dest || !dest))
-    moves.unselect(s as any);
-  else if (!s.selectable.enabled) moves.unselect(s as any);
+    moves.unselect(s);
+  else if (!s.selectable.enabled) moves.unselect(s);
 
   removeDragElements(s);
 
@@ -226,7 +226,7 @@ export function cancel(s: State): void {
   if (cur) {
     if (cur.newPiece) s.pieces.delete(cur.orig);
     s.draggable.current = undefined;
-    moves.unselect(s as any);
+    moves.unselect(s);
     removeDragElements(s);
     s.dom.redraw();
   }

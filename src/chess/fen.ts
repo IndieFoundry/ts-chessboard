@@ -1,6 +1,7 @@
 /**
- * FEN parsing and writing
- * Based on work by Niklas Fiekas - Licensed under GPL-3.0
+ * FEN (Forsyth-Edwards Notation) parsing and serialization.
+ * Handles standard FEN format including X-FEN castling notation.
+ * Part of @indiefoundry/chessboard's built-in chess engine.
  */
 
 import { Board } from './board';

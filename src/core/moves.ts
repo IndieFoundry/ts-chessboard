@@ -1,12 +1,17 @@
 /**
  * Move execution and board logic
  */
-import type { Key, Piece, PiecesDiff, Color, MoveMetadata, SetPremoveMetadata, Drop, NumberPair } from './types';
+import type { Key, Piece, PiecesDiff, Color, Role, MoveMetadata, SetPremoveMetadata, Drop, NumberPair, Mobility } from './types';
+import type { PremoveState } from './premoves';
 import { pos2key, key2pos, opposite, pos2keyUnsafe, allPos, computeSquareCenter } from './squares';
-import { calculatePremoves, type PremoveState } from './premoves';
+import { calculatePremoves } from './premoves';
 import { distanceSq, queenDir, knightDir, samePos } from '../utils/math';
 
-/** Base state interface needed for move operations */
+/**
+ * State interface for move operations.
+ * Defines the minimal state required by move functions, keeping this module
+ * decoupled from the full engine state.
+ */
 export interface MoveState extends PremoveState {
   orientation: Color;
   selected?: Key;
@@ -21,7 +26,7 @@ export interface MoveState extends PremoveState {
     showDests: boolean;
     events: {
       after?: (orig: Key, dest: Key, metadata: MoveMetadata) => void;
-      afterNewPiece?: (role: string, key: Key, metadata: MoveMetadata) => void;
+      afterNewPiece?: (role: Role, key: Key, metadata: MoveMetadata) => void;
     };
     rookCastle: boolean;
   };
@@ -32,7 +37,7 @@ export interface MoveState extends PremoveState {
     dests?: Key[];
     customDests?: Map<Key, Key[]>;
     current?: [Key, Key];
-    additionalPremoveRequirements: (ctx: any) => boolean;
+    additionalPremoveRequirements: Mobility;
     events: {
       set?: (orig: Key, dest: Key, metadata?: SetPremoveMetadata) => void;
       unset?: () => void;
@@ -40,15 +45,15 @@ export interface MoveState extends PremoveState {
   };
   predroppable: {
     enabled: boolean;
-    current?: { role: string; key: Key };
+    current?: { role: Role; key: Key };
     events: {
-      set?: (role: string, key: Key) => void;
+      set?: (role: Role, key: Key) => void;
       unset?: () => void;
     };
   };
   draggable: {
     enabled: boolean;
-    current?: any;
+    current?: unknown;
   };
   selectable: {
     enabled: boolean;
@@ -69,7 +74,7 @@ export interface MoveState extends PremoveState {
     stop: () => number;
   };
   animation: {
-    current?: any;
+    current?: unknown;
   };
   dom?: {
     bounds: () => DOMRectReadOnly;
@@ -77,7 +82,9 @@ export interface MoveState extends PremoveState {
 }
 
 /**
- * Calls a user callback function asynchronously
+ * Calls a user callback function asynchronously.
+ * Uses setTimeout to defer execution until after paint, preventing UI callbacks
+ * from blocking the current render cycle.
  */
 export function callUserFunction<T extends (...args: any[]) => void>(
   f: T | undefined,
@@ -144,7 +151,7 @@ export function unsetPremove(state: MoveState): void {
   }
 }
 
-function setPredrop(state: MoveState, role: string, key: Key): void {
+function setPredrop(state: MoveState, role: Role, key: Key): void {
   unsetPremove(state);
   state.predroppable.current = { role, key };
   callUserFunction(state.predroppable.events.set, role, key);

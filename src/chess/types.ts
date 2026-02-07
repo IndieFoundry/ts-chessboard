@@ -1,6 +1,6 @@
 /**
- * Core chess type definitions
- * Based on work by Niklas Fiekas - Licensed under GPL-3.0
+ * Type definitions for chess squares, pieces, and moves.
+ * Part of @indiefoundry/chessboard's built-in chess engine.
  */
 
 export const FILE_NAMES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] as const;

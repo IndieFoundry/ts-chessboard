@@ -1,6 +1,7 @@
 /**
- * Setup - Chess position representation
- * Based on work by Niklas Fiekas - Licensed under GPL-3.0
+ * Chess position setup (may not be legal).
+ * Stores board, turn, castling rights, en passant, and move counters.
+ * Part of @indiefoundry/chessboard's built-in chess engine.
  */
 
 import { Board } from './board';
