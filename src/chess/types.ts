@@ -1,5 +1,6 @@
 /**
  * Core chess type definitions
+ * Based on work by Niklas Fiekas - Licensed under GPL-3.0
  */
 
 export const FILE_NAMES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] as const;

@@ -1,5 +1,6 @@
 /**
  * SquareSet - Immutable bitboard implementation for efficient square set operations
+ * Based on work by Niklas Fiekas - Licensed under GPL-3.0
  */
 
 import type { Color, Square } from './types';

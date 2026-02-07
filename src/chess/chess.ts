@@ -1,5 +1,6 @@
 /**
  * Chess - Legal move generation for standard chess
+ * Based on work by Niklas Fiekas - Licensed under GPL-3.0
  */
 
 import {

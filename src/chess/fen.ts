@@ -1,5 +1,6 @@
 /**
  * FEN parsing and writing
+ * Based on work by Niklas Fiekas - Licensed under GPL-3.0
  */
 
 import { Board } from './board';

@@ -1,5 +1,6 @@
 /**
  * Chess logic module - legal move generation and game state
+ * Based on work by Niklas Fiekas - Licensed under GPL-3.0
  */
 
 // Types

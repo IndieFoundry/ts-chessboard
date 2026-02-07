@@ -1,5 +1,6 @@
 /**
  * Board - Piece positions using bitboards
+ * Based on work by Niklas Fiekas - Licensed under GPL-3.0
  */
 
 import { SquareSet } from './squareSet';
