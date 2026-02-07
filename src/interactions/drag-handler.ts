@@ -237,11 +237,14 @@ function removeDragElements(s: State): void {
   if (e.ghost) setVisible(e.ghost, false);
 }
 
+function isPieceNode(el: Node): el is PieceNode {
+  return (el as HTMLElement).tagName === 'PIECE';
+}
+
 function pieceElementByKey(s: State, key: Key): PieceNode | undefined {
   let el = s.dom.elements.board.firstChild;
   while (el) {
-    if ((el as any).cgKey === key && (el as any).tagName === 'PIECE')
-      return el as PieceNode;
+    if (isPieceNode(el) && el.cgKey === key) return el;
     el = el.nextSibling;
   }
   return;

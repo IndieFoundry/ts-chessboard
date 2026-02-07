@@ -7,6 +7,9 @@ import { setCheck, setSelected } from '../core/moves';
 import { parseFen } from '../core/position';
 import type { DrawShape, DrawBrushes } from '../interactions/draw-handler';
 
+/** Minimum animation duration in ms below which animations are disabled */
+const MIN_ANIMATION_DURATION_MS = 70;
+
 /**
  * Configuration options for the chessboard.
  *
@@ -211,8 +214,8 @@ export interface Config {
 export function applyAnimation(state: HeadlessState, config: Config): void {
   if (config.animation) {
     deepMerge(state.animation, config.animation);
-    // no need for such short animations
-    if ((state.animation.duration || 0) < 70) state.animation.enabled = false;
+    // Disable animations that are too short to be perceptible
+    if ((state.animation.duration || 0) < MIN_ANIMATION_DURATION_MS) state.animation.enabled = false;
   }
 }
 
@@ -262,17 +265,22 @@ export function configure(state: HeadlessState, config: Config): void {
   }
 }
 
-function deepMerge(base: any, extend: any): void {
-  for (const key in extend) {
-    if (key === '__proto__' || key === 'constructor' || !Object.prototype.hasOwnProperty.call(extend, key))
+/** Deep merge extend into base, mutating base in place */
+function deepMerge(base: object, extend: object): void {
+  const baseRecord = base as Record<string, unknown>;
+  const extendRecord = extend as Record<string, unknown>;
+  for (const key in extendRecord) {
+    if (key === '__proto__' || key === 'constructor' || !Object.prototype.hasOwnProperty.call(extendRecord, key))
       continue;
+    const baseVal = baseRecord[key];
+    const extendVal = extendRecord[key];
     if (
-      Object.prototype.hasOwnProperty.call(base, key) &&
-      isPlainObject(base[key]) &&
-      isPlainObject(extend[key])
+      Object.prototype.hasOwnProperty.call(baseRecord, key) &&
+      isPlainObject(baseVal) &&
+      isPlainObject(extendVal)
     )
-      deepMerge(base[key], extend[key]);
-    else base[key] = extend[key];
+      deepMerge(baseVal as object, extendVal as object);
+    else baseRecord[key] = extendVal;
   }
 }
 
