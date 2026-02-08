@@ -8,7 +8,7 @@ import type { ActiveTransition, MotionVectorMap, FadingPieceMap } from '../anima
 import type { DragCurrent } from '../interactions/drag-handler';
 import { key2pos, pos2key } from '../core/squares';
 import { isWhitePerspective } from '../core/moves';
-import { createEl, translate, setVisible, posToTranslate as computePixelPosition } from '../utils/dom';
+import { createEl, translate, setVisible, setPositionByKey, posToTranslate as computePixelPosition } from '../utils/dom';
 import { squaresBetween } from '../utils/math';
 
 /** Piece identifier string: `${colorCode}${roleCode}` */
@@ -199,6 +199,9 @@ export function syncPiecesWithDom(state: State): void {
   const boardElement = state.dom.elements.board;
   const pieces: Pieces = state.pieces;
 
+  // Set board orientation for CSS positioning
+  boardElement.dataset.orientation = whiteBottom ? 'white' : 'black';
+
   // Get current animation state
   const activeAnimation: ActiveTransition | undefined = state.animation.current;
   const motions: MotionVectorMap = activeAnimation ? activeAnimation.plan.anims : new Map();
@@ -234,7 +237,8 @@ export function syncPiecesWithDom(state: State): void {
       // Handle drag state cleanup
       if (element.cbDragging && (!activeDrag || activeDrag.orig !== key)) {
         element.classList.remove('dragging');
-        translate(element, posToPixel(key2pos(key), whiteBottom));
+        element.style.transform = ''; // Clear inline transform, CSS will position
+        setPositionByKey(element, key);
         element.cbDragging = false;
       }
 
@@ -247,17 +251,18 @@ export function syncPiecesWithDom(state: State): void {
       if (pieceAtKey) {
         // There should be a piece at this position
         if (motion && element.cbAnimating && elementPieceId === getPieceIdentifier(pieceAtKey)) {
-          // Piece is animating - apply motion offset
+          // Piece is animating - apply motion offset via inline transform
           const coords = key2pos(key);
           coords[0] += motion[2];
           coords[1] += motion[3];
           element.classList.add('anim');
           translate(element, posToPixel(coords, whiteBottom));
         } else if (element.cbAnimating) {
-          // Animation complete - reset to final position
+          // Animation complete - reset to final position via data attributes
           element.cbAnimating = false;
           element.classList.remove('anim');
-          translate(element, posToPixel(key2pos(key), whiteBottom));
+          element.style.transform = ''; // Clear inline transform, CSS will position
+          setPositionByKey(element, key);
           if (state.addPieceZIndex) {
             element.style.zIndex = calculateZIndex(key2pos(key), whiteBottom);
           }
@@ -295,18 +300,17 @@ export function syncPiecesWithDom(state: State): void {
   // Create or reposition square highlight elements
   for (const [key, className] of desiredHighlights) {
     const available = availableSquareElements.get(className)?.pop();
-    const pixelPosition = posToPixel(key2pos(key), whiteBottom);
 
     if (available) {
       // Reuse existing element
       available.cbKey = key;
-      translate(available, pixelPosition);
+      setPositionByKey(available, key);
       setVisible(available, true);
     } else {
       // Create new element
       const squareElement = createEl('div', 'cb-sq ' + className) as SquareNode;
       squareElement.cbKey = key;
-      translate(squareElement, pixelPosition);
+      setPositionByKey(squareElement, key);
       boardElement.insertBefore(squareElement, boardElement.firstChild);
     }
   }
@@ -341,13 +345,17 @@ export function syncPiecesWithDom(state: State): void {
         }
 
         if (motion) {
+          // Animating - use inline transform
           relocatable.cbAnimating = true;
           relocatable.classList.add('anim');
           coords[0] += motion[2];
           coords[1] += motion[3];
+          translate(relocatable, posToPixel(coords, whiteBottom));
+        } else {
+          // Static - use data attributes
+          relocatable.style.transform = '';
+          setPositionByKey(relocatable, key);
         }
-
-        translate(relocatable, posToPixel(coords, whiteBottom));
       } else {
         // Create new piece element
         const pieceElement = createEl('div', 'cb-piece') as PieceNode;
@@ -360,12 +368,16 @@ export function syncPiecesWithDom(state: State): void {
         pieceElement.cbKey = key;
 
         if (motion) {
+          // Animating - use inline transform
           pieceElement.cbAnimating = true;
+          pieceElement.classList.add('anim');
           coords[0] += motion[2];
           coords[1] += motion[3];
+          translate(pieceElement, posToPixel(coords, whiteBottom));
+        } else {
+          // Static - use data attributes
+          setPositionByKey(pieceElement, key);
         }
-
-        translate(pieceElement, posToPixel(coords, whiteBottom));
 
         if (state.addPieceZIndex) {
           pieceElement.style.zIndex = calculateZIndex(coords, whiteBottom);
@@ -387,16 +399,22 @@ export const render = syncPiecesWithDom;
 
 /**
  * Reposition all elements after a board resize.
+ * Since we use CSS percentage-based positioning via data attributes,
+ * most elements don't need manual repositioning - CSS handles it.
+ * Only animating pieces with inline transforms need updating.
  */
 export function repositionAfterResize(state: State): void {
   const whiteBottom = isWhitePerspective(state);
   const posToPixel = computePixelPosition(state.dom.bounds());
 
+  // Update board orientation in case it changed
+  state.dom.elements.board.dataset.orientation = whiteBottom ? 'white' : 'black';
+
   let element = state.dom.elements.board.firstChild as PieceNode | SquareNode | undefined;
 
   while (element) {
-    // Only reposition elements that aren't currently animating
-    if ((isPieceElement(element) && !element.cbAnimating) || isSquareElement(element)) {
+    // Only reposition animating pieces that have inline transforms
+    if (isPieceElement(element) && element.cbAnimating) {
       translate(element, posToPixel(key2pos(element.cbKey), whiteBottom));
     }
     element = element.nextSibling as PieceNode | SquareNode | undefined;

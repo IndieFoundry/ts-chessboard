@@ -28,10 +28,19 @@ export const translateAndScale = (el: HTMLElement, pos: NumberPair, scale = 1): 
 };
 
 /**
- * Sets the visibility of an element
+ * Sets the visibility of an element using CSS class (no inline style)
  */
 export const setVisible = (el: HTMLElement, v: boolean): void => {
-  el.style.visibility = v ? 'visible' : 'hidden';
+  el.classList.toggle('hidden', !v);
+};
+
+/**
+ * Sets element position via data attributes for CSS-based positioning
+ * @param key - Square key like 'e4'
+ */
+export const setPositionByKey = (el: HTMLElement, key: string): void => {
+  el.dataset.file = key[0];
+  el.dataset.rank = key[1];
 };
 
 /**

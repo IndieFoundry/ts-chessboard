@@ -4,8 +4,8 @@
 import type { State } from '../engine/state';
 import type { Key, Piece, NumberPair, MouchEvent, PieceNode } from '../core/types';
 import * as moves from '../core/moves';
-import { key2pos, samePiece } from '../core/squares';
-import { eventPosition, translate, posToTranslate, setVisible } from '../utils/dom';
+import { samePiece } from '../core/squares';
+import { eventPosition, translate, setVisible, setPositionByKey } from '../utils/dom';
 import { distanceSq } from '../utils/math';
 import { clear as drawClear } from './draw-handler';
 import { anim } from '../animation/animator';
@@ -88,7 +88,7 @@ export function start(s: State, e: MouchEvent): void {
       ghost.className = 'cb-phantom';
       ghost.dataset.c = piece.color === 'white' ? 'w' : 'b';
       ghost.dataset.r = piece.role[0] === 'k' && piece.role[1] === 'n' ? 'n' : piece.role[0];
-      translate(ghost, posToTranslate(bounds)(key2pos(orig), moves.whitePov(s)));
+      setPositionByKey(ghost, orig);
       setVisible(ghost, true);
     }
     processDrag(s);

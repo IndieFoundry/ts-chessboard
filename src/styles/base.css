@@ -39,6 +39,52 @@
   pointer-events: none;
 }
 
+.cb-grid .cb-sq.hidden {
+  visibility: hidden;
+}
+
+/* Square positioning via data attributes (white at bottom) */
+.cb-sq[data-file="a"] { --fx: 0; }
+.cb-sq[data-file="b"] { --fx: 1; }
+.cb-sq[data-file="c"] { --fx: 2; }
+.cb-sq[data-file="d"] { --fx: 3; }
+.cb-sq[data-file="e"] { --fx: 4; }
+.cb-sq[data-file="f"] { --fx: 5; }
+.cb-sq[data-file="g"] { --fx: 6; }
+.cb-sq[data-file="h"] { --fx: 7; }
+
+.cb-sq[data-rank="1"] { --ry: 7; }
+.cb-sq[data-rank="2"] { --ry: 6; }
+.cb-sq[data-rank="3"] { --ry: 5; }
+.cb-sq[data-rank="4"] { --ry: 4; }
+.cb-sq[data-rank="5"] { --ry: 3; }
+.cb-sq[data-rank="6"] { --ry: 2; }
+.cb-sq[data-rank="7"] { --ry: 1; }
+.cb-sq[data-rank="8"] { --ry: 0; }
+
+/* Flipped board (black at bottom) */
+.cb-grid[data-orientation="black"] .cb-sq[data-file="a"] { --fx: 7; }
+.cb-grid[data-orientation="black"] .cb-sq[data-file="b"] { --fx: 6; }
+.cb-grid[data-orientation="black"] .cb-sq[data-file="c"] { --fx: 5; }
+.cb-grid[data-orientation="black"] .cb-sq[data-file="d"] { --fx: 4; }
+.cb-grid[data-orientation="black"] .cb-sq[data-file="e"] { --fx: 3; }
+.cb-grid[data-orientation="black"] .cb-sq[data-file="f"] { --fx: 2; }
+.cb-grid[data-orientation="black"] .cb-sq[data-file="g"] { --fx: 1; }
+.cb-grid[data-orientation="black"] .cb-sq[data-file="h"] { --fx: 0; }
+
+.cb-grid[data-orientation="black"] .cb-sq[data-rank="1"] { --ry: 0; }
+.cb-grid[data-orientation="black"] .cb-sq[data-rank="2"] { --ry: 1; }
+.cb-grid[data-orientation="black"] .cb-sq[data-rank="3"] { --ry: 2; }
+.cb-grid[data-orientation="black"] .cb-sq[data-rank="4"] { --ry: 3; }
+.cb-grid[data-orientation="black"] .cb-sq[data-rank="5"] { --ry: 4; }
+.cb-grid[data-orientation="black"] .cb-sq[data-rank="6"] { --ry: 5; }
+.cb-grid[data-orientation="black"] .cb-sq[data-rank="7"] { --ry: 6; }
+.cb-grid[data-orientation="black"] .cb-sq[data-rank="8"] { --ry: 7; }
+
+.cb-sq {
+  transform: translate(calc(var(--fx) * 100%), calc(var(--ry) * 100%));
+}
+
 .cb-grid .cb-sq.move-dest {
   pointer-events: auto;
 }
@@ -57,6 +103,49 @@
   z-index: 2;
   will-change: transform;
   pointer-events: none;
+}
+
+/* Piece positioning via data attributes (white at bottom) */
+.cb-piece[data-file="a"] { --fx: 0; }
+.cb-piece[data-file="b"] { --fx: 1; }
+.cb-piece[data-file="c"] { --fx: 2; }
+.cb-piece[data-file="d"] { --fx: 3; }
+.cb-piece[data-file="e"] { --fx: 4; }
+.cb-piece[data-file="f"] { --fx: 5; }
+.cb-piece[data-file="g"] { --fx: 6; }
+.cb-piece[data-file="h"] { --fx: 7; }
+
+.cb-piece[data-rank="1"] { --ry: 7; }
+.cb-piece[data-rank="2"] { --ry: 6; }
+.cb-piece[data-rank="3"] { --ry: 5; }
+.cb-piece[data-rank="4"] { --ry: 4; }
+.cb-piece[data-rank="5"] { --ry: 3; }
+.cb-piece[data-rank="6"] { --ry: 2; }
+.cb-piece[data-rank="7"] { --ry: 1; }
+.cb-piece[data-rank="8"] { --ry: 0; }
+
+/* Flipped board (black at bottom) */
+.cb-grid[data-orientation="black"] .cb-piece[data-file="a"] { --fx: 7; }
+.cb-grid[data-orientation="black"] .cb-piece[data-file="b"] { --fx: 6; }
+.cb-grid[data-orientation="black"] .cb-piece[data-file="c"] { --fx: 5; }
+.cb-grid[data-orientation="black"] .cb-piece[data-file="d"] { --fx: 4; }
+.cb-grid[data-orientation="black"] .cb-piece[data-file="e"] { --fx: 3; }
+.cb-grid[data-orientation="black"] .cb-piece[data-file="f"] { --fx: 2; }
+.cb-grid[data-orientation="black"] .cb-piece[data-file="g"] { --fx: 1; }
+.cb-grid[data-orientation="black"] .cb-piece[data-file="h"] { --fx: 0; }
+
+.cb-grid[data-orientation="black"] .cb-piece[data-rank="1"] { --ry: 0; }
+.cb-grid[data-orientation="black"] .cb-piece[data-rank="2"] { --ry: 1; }
+.cb-grid[data-orientation="black"] .cb-piece[data-rank="3"] { --ry: 2; }
+.cb-grid[data-orientation="black"] .cb-piece[data-rank="4"] { --ry: 3; }
+.cb-grid[data-orientation="black"] .cb-piece[data-rank="5"] { --ry: 4; }
+.cb-grid[data-orientation="black"] .cb-piece[data-rank="6"] { --ry: 5; }
+.cb-grid[data-orientation="black"] .cb-piece[data-rank="7"] { --ry: 6; }
+.cb-grid[data-orientation="black"] .cb-piece[data-rank="8"] { --ry: 7; }
+
+/* Apply CSS transform only when NOT animating or dragging */
+.cb-piece:not(.anim):not(.dragging) {
+  transform: translate(calc(var(--fx) * 100%), calc(var(--ry) * 100%));
 }
 
 .cb-grid .cb-piece.dragging {
@@ -85,6 +174,51 @@
   z-index: 1;
   will-change: transform;
   pointer-events: none;
+}
+
+.cb-layer .cb-phantom.hidden {
+  visibility: hidden;
+}
+
+/* Phantom positioning via data attributes */
+.cb-phantom[data-file="a"] { --fx: 0; }
+.cb-phantom[data-file="b"] { --fx: 1; }
+.cb-phantom[data-file="c"] { --fx: 2; }
+.cb-phantom[data-file="d"] { --fx: 3; }
+.cb-phantom[data-file="e"] { --fx: 4; }
+.cb-phantom[data-file="f"] { --fx: 5; }
+.cb-phantom[data-file="g"] { --fx: 6; }
+.cb-phantom[data-file="h"] { --fx: 7; }
+
+.cb-phantom[data-rank="1"] { --ry: 7; }
+.cb-phantom[data-rank="2"] { --ry: 6; }
+.cb-phantom[data-rank="3"] { --ry: 5; }
+.cb-phantom[data-rank="4"] { --ry: 4; }
+.cb-phantom[data-rank="5"] { --ry: 3; }
+.cb-phantom[data-rank="6"] { --ry: 2; }
+.cb-phantom[data-rank="7"] { --ry: 1; }
+.cb-phantom[data-rank="8"] { --ry: 0; }
+
+.cb-grid[data-orientation="black"] .cb-phantom[data-file="a"] { --fx: 7; }
+.cb-grid[data-orientation="black"] .cb-phantom[data-file="b"] { --fx: 6; }
+.cb-grid[data-orientation="black"] .cb-phantom[data-file="c"] { --fx: 5; }
+.cb-grid[data-orientation="black"] .cb-phantom[data-file="d"] { --fx: 4; }
+.cb-grid[data-orientation="black"] .cb-phantom[data-file="e"] { --fx: 3; }
+.cb-grid[data-orientation="black"] .cb-phantom[data-file="f"] { --fx: 2; }
+.cb-grid[data-orientation="black"] .cb-phantom[data-file="g"] { --fx: 1; }
+.cb-grid[data-orientation="black"] .cb-phantom[data-file="h"] { --fx: 0; }
+
+.cb-grid[data-orientation="black"] .cb-phantom[data-rank="1"] { --ry: 0; }
+.cb-grid[data-orientation="black"] .cb-phantom[data-rank="2"] { --ry: 1; }
+.cb-grid[data-orientation="black"] .cb-phantom[data-rank="3"] { --ry: 2; }
+.cb-grid[data-orientation="black"] .cb-phantom[data-rank="4"] { --ry: 3; }
+.cb-grid[data-orientation="black"] .cb-phantom[data-rank="5"] { --ry: 4; }
+.cb-grid[data-orientation="black"] .cb-phantom[data-rank="6"] { --ry: 5; }
+.cb-grid[data-orientation="black"] .cb-phantom[data-rank="7"] { --ry: 6; }
+.cb-grid[data-orientation="black"] .cb-phantom[data-rank="8"] { --ry: 7; }
+
+.cb-phantom {
+  transform: translate(calc(var(--fx) * 100%), calc(var(--ry) * 100%));
 }
 
 .cb-layer .cb-piece svg {
