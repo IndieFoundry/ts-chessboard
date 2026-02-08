@@ -1,4 +1,4 @@
-.cb-wrap {
+.cb-layer {
   box-sizing: content-box;
   position: relative;
   display: block;
@@ -26,7 +26,7 @@
   background-size: cover;
 }
 
-.cb-wrap.interactive .cb-grid {
+.cb-layer.interactive .cb-grid {
   cursor: pointer;
 }
 
@@ -47,7 +47,7 @@
   will-change: transform;
 }
 
-.cb-wrap .cb-piece {
+.cb-layer .cb-piece {
   position: absolute;
   top: 0;
   left: 0;
@@ -74,7 +74,7 @@
   opacity: 0.5;
 }
 
-.cb-wrap .cb-phantom {
+.cb-layer .cb-phantom {
   position: absolute;
   top: 0;
   left: 0;
@@ -87,7 +87,7 @@
   pointer-events: none;
 }
 
-.cb-wrap .cb-piece svg {
+.cb-layer .cb-piece svg {
   overflow: hidden;
   position: relative;
   top: 0px;
@@ -99,11 +99,11 @@
   opacity: 0.6;
 }
 
-.cb-wrap .cb-hints,
-.cb-wrap .cb-arrows,
-.cb-wrap .cb-markers,
-.cb-wrap .cb-arrows-below,
-.cb-wrap .cb-markers-below {
+.cb-layer .cb-hints,
+.cb-layer .cb-arrows,
+.cb-layer .cb-markers,
+.cb-layer .cb-arrows-below,
+.cb-layer .cb-markers-below {
   overflow: visible;
   position: absolute;
   top: 0px;
@@ -113,40 +113,40 @@
   pointer-events: none;
 }
 
-.cb-wrap .cb-hints {
+.cb-layer .cb-hints {
   z-index: 2;
 }
 
-.cb-wrap .cb-hints .cb-piece {
+.cb-layer .cb-hints .cb-piece {
   opacity: 0.3;
 }
 
-.cb-wrap .cb-arrows {
+.cb-layer .cb-arrows {
   overflow: hidden;
   opacity: 0.6;
   z-index: 2;
 }
 
-.cb-wrap .cb-arrows-below {
+.cb-layer .cb-arrows-below {
   overflow: hidden;
   z-index: 1;
 }
 
-.cb-wrap .cb-markers-below {
+.cb-layer .cb-markers-below {
   z-index: 1;
 }
 
-.cb-wrap .cb-markers {
+.cb-layer .cb-markers {
   /* over piece.anim = 8, but under piece.dragging = 11 */
   z-index: 9;
 }
 
-.cb-wrap .cb-markers svg,
-.cb-wrap .cb-markers-below svg {
+.cb-layer .cb-markers svg,
+.cb-layer .cb-markers-below svg {
   overflow: visible;
 }
 
-.cb-wrap .cb-labels {
+.cb-layer .cb-labels {
   position: absolute;
   display: flex;
   pointer-events: none;
@@ -155,7 +155,7 @@
   font-size: 9px;
 }
 
-.cb-wrap .cb-labels.rows {
+.cb-layer .cb-labels.rows {
   left: 4px;
   top: -20px;
   flex-flow: column-reverse;
@@ -163,16 +163,16 @@
   width: 12px;
 }
 
-.cb-wrap .cb-labels.rows.flip {
+.cb-layer .cb-labels.rows.flip {
   flex-flow: column;
 }
 
-.cb-wrap .cb-labels.rows.left {
+.cb-layer .cb-labels.rows.left {
   left: -15px;
   align-items: flex-end;
 }
 
-.cb-wrap .cb-labels.cols {
+.cb-layer .cb-labels.cols {
   bottom: -4px;
   left: 24px;
   flex-flow: row;
@@ -182,19 +182,19 @@
   text-align: center;
 }
 
-.cb-wrap .cb-labels.cols.flip {
+.cb-layer .cb-labels.cols.flip {
   flex-flow: row-reverse;
 }
 
-.cb-wrap .cb-labels span {
+.cb-layer .cb-labels span {
   flex: 1 1 auto;
 }
 
-.cb-wrap .cb-labels.rows span {
+.cb-layer .cb-labels.rows span {
   transform: translateY(39%);
 }
 
-.cb-wrap .cb-labels.on-squares {
+.cb-layer .cb-labels.on-squares {
   bottom: 0;
   left: 0;
   text-transform: uppercase;
@@ -204,42 +204,42 @@
   width: 12.5%;
 }
 
-.cb-wrap .cb-labels.on-squares.flip {
+.cb-layer .cb-labels.on-squares.flip {
   flex-flow: column;
 }
 
-.cb-wrap .cb-labels.on-squares.left {
+.cb-layer .cb-labels.on-squares.left {
   text-align: left;
 }
 
-.cb-wrap .cb-labels.on-squares span {
+.cb-layer .cb-labels.on-squares span {
   padding: 6% 4%;
 }
 
-.cb-wrap .cb-labels.on-squares.file2 {
+.cb-layer .cb-labels.on-squares.file2 {
   transform: translateX(100%);
 }
 
-.cb-wrap .cb-labels.on-squares.file3 {
+.cb-layer .cb-labels.on-squares.file3 {
   transform: translateX(200%);
 }
 
-.cb-wrap .cb-labels.on-squares.file4 {
+.cb-layer .cb-labels.on-squares.file4 {
   transform: translateX(300%);
 }
 
-.cb-wrap .cb-labels.on-squares.file5 {
+.cb-layer .cb-labels.on-squares.file5 {
   transform: translateX(400%);
 }
 
-.cb-wrap .cb-labels.on-squares.file6 {
+.cb-layer .cb-labels.on-squares.file6 {
   transform: translateX(500%);
 }
 
-.cb-wrap .cb-labels.on-squares.file7 {
+.cb-layer .cb-labels.on-squares.file7 {
   transform: translateX(600%);
 }
 
-.cb-wrap .cb-labels.on-squares.file8 {
+.cb-layer .cb-labels.on-squares.file8 {
   transform: translateX(700%);
 }
