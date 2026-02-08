@@ -35,7 +35,7 @@ export function renderResized(state: State): void {
     posToTranslate = posToTranslateFromBounds(state.dom.bounds());
   let el = state.dom.elements.autoPieces?.firstChild as PieceNode | undefined;
   while (el) {
-    translateAndScale(el, posToTranslate(key2pos(el.cgKey), asWhite), el.cgScale);
+    translateAndScale(el, posToTranslate(key2pos(el.cbKey), asWhite), el.cbScale);
     el = el.nextSibling as PieceNode | undefined;
   }
 }
@@ -47,9 +47,9 @@ function renderShape(state: State, { shape, hash }: SyncableShape, bounds: DOMRe
   const scale = shape.piece?.scale;
 
   const pieceEl = createEl('piece', `${role} ${color}`) as PieceNode;
-  pieceEl.setAttribute('cgHash', hash);
-  pieceEl.cgKey = orig;
-  pieceEl.cgScale = scale;
+  pieceEl.setAttribute('cbHash', hash);
+  pieceEl.cbKey = orig;
+  pieceEl.cbScale = scale;
   translateAndScale(pieceEl, posToTranslateFromBounds(bounds)(key2pos(orig), whitePov(state)), scale);
 
   return pieceEl;

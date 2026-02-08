@@ -215,39 +215,39 @@ export function syncPiecesWithDom(state: State): void {
   let element = boardElement.firstChild as PieceNode | SquareNode | undefined;
 
   while (element) {
-    const key = element.cgKey;
+    const key = element.cbKey;
 
     if (isPieceElement(element)) {
       const pieceAtKey = pieces.get(key);
       const motion = motions.get(key);
       const fading = fadings.get(key);
-      const elementPieceId = element.cgPiece;
+      const elementPieceId = element.cbPiece;
 
       // Handle drag state cleanup
-      if (element.cgDragging && (!activeDrag || activeDrag.orig !== key)) {
+      if (element.cbDragging && (!activeDrag || activeDrag.orig !== key)) {
         element.classList.remove('dragging');
         translate(element, posToPixel(key2pos(key), whiteBottom));
-        element.cgDragging = false;
+        element.cbDragging = false;
       }
 
       // Handle fading state cleanup
-      if (!fading && element.cgFading) {
-        element.cgFading = false;
+      if (!fading && element.cbFading) {
+        element.cbFading = false;
         element.classList.remove('fading');
       }
 
       if (pieceAtKey) {
         // There should be a piece at this position
-        if (motion && element.cgAnimating && elementPieceId === getPieceIdentifier(pieceAtKey)) {
+        if (motion && element.cbAnimating && elementPieceId === getPieceIdentifier(pieceAtKey)) {
           // Piece is animating - apply motion offset
           const coords = key2pos(key);
           coords[0] += motion[2];
           coords[1] += motion[3];
           element.classList.add('anim');
           translate(element, posToPixel(coords, whiteBottom));
-        } else if (element.cgAnimating) {
+        } else if (element.cbAnimating) {
           // Animation complete - reset to final position
-          element.cgAnimating = false;
+          element.cbAnimating = false;
           element.classList.remove('anim');
           translate(element, posToPixel(key2pos(key), whiteBottom));
           if (state.addPieceZIndex) {
@@ -256,12 +256,12 @@ export function syncPiecesWithDom(state: State): void {
         }
 
         // Check if piece matches what should be there
-        if (elementPieceId === getPieceIdentifier(pieceAtKey) && (!fading || !element.cgFading)) {
+        if (elementPieceId === getPieceIdentifier(pieceAtKey) && (!fading || !element.cbFading)) {
           unchangedPieces.add(key);
         } else if (fading && elementPieceId === getPieceIdentifier(fading)) {
           // This piece is fading out
           element.classList.add('fading');
-          element.cgFading = true;
+          element.cbFading = true;
         } else {
           // Piece needs to be relocated
           pushToMap(relocatablePieces, elementPieceId, element);
@@ -291,13 +291,13 @@ export function syncPiecesWithDom(state: State): void {
 
     if (available) {
       // Reuse existing element
-      available.cgKey = key;
+      available.cbKey = key;
       translate(available, pixelPosition);
       setVisible(available, true);
     } else {
       // Create new element
       const squareElement = createEl('square', className) as SquareNode;
-      squareElement.cgKey = key;
+      squareElement.cbKey = key;
       translate(squareElement, pixelPosition);
       boardElement.insertBefore(squareElement, boardElement.firstChild);
     }
@@ -320,11 +320,11 @@ export function syncPiecesWithDom(state: State): void {
 
       if (relocatable) {
         // Reuse existing piece element
-        relocatable.cgKey = key;
+        relocatable.cbKey = key;
 
-        if (relocatable.cgFading) {
+        if (relocatable.cbFading) {
           relocatable.classList.remove('fading');
-          relocatable.cgFading = false;
+          relocatable.cbFading = false;
         }
 
         const coords = key2pos(key);
@@ -333,7 +333,7 @@ export function syncPiecesWithDom(state: State): void {
         }
 
         if (motion) {
-          relocatable.cgAnimating = true;
+          relocatable.cbAnimating = true;
           relocatable.classList.add('anim');
           coords[0] += motion[2];
           coords[1] += motion[3];
@@ -345,11 +345,11 @@ export function syncPiecesWithDom(state: State): void {
         const pieceElement = createEl('piece', pieceId) as PieceNode;
         const coords = key2pos(key);
 
-        pieceElement.cgPiece = pieceId;
-        pieceElement.cgKey = key;
+        pieceElement.cbPiece = pieceId;
+        pieceElement.cbKey = key;
 
         if (motion) {
-          pieceElement.cgAnimating = true;
+          pieceElement.cbAnimating = true;
           coords[0] += motion[2];
           coords[1] += motion[3];
         }
@@ -385,8 +385,8 @@ export function repositionAfterResize(state: State): void {
 
   while (element) {
     // Only reposition elements that aren't currently animating
-    if ((isPieceElement(element) && !element.cgAnimating) || isSquareElement(element)) {
-      translate(element, posToPixel(key2pos(element.cgKey), whiteBottom));
+    if ((isPieceElement(element) && !element.cbAnimating) || isSquareElement(element)) {
+      translate(element, posToPixel(key2pos(element.cbKey), whiteBottom));
     }
     element = element.nextSibling as PieceNode | SquareNode | undefined;
   }
@@ -416,8 +416,8 @@ export function recalculateBoardBounds(state: State): void {
 
   // Update CSS variables if configured
   if (state.addDimensionsCssVarsTo) {
-    state.addDimensionsCssVarsTo.style.setProperty('--cg-width', alignedWidth + 'px');
-    state.addDimensionsCssVarsTo.style.setProperty('--cg-height', alignedHeight + 'px');
+    state.addDimensionsCssVarsTo.style.setProperty('--chess-width', alignedWidth + 'px');
+    state.addDimensionsCssVarsTo.style.setProperty('--chess-height', alignedHeight + 'px');
   }
 }
 

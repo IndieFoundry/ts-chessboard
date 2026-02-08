@@ -116,17 +116,17 @@ export type MouchEvent = Event & Partial<MouseEvent & TouchEvent>;
 
 /** HTML element with a board key attached */
 export interface KeyedNode extends HTMLElement {
-  cgKey: Key;
+  cbKey: Key;
 }
 
 /** Piece DOM element */
 export interface PieceNode extends KeyedNode {
   tagName: 'PIECE';
-  cgPiece: string;
-  cgAnimating?: boolean;
-  cgFading?: boolean;
-  cgDragging?: boolean;
-  cgScale?: number;
+  cbPiece: string;
+  cbAnimating?: boolean;
+  cbFading?: boolean;
+  cbDragging?: boolean;
+  cbScale?: number;
 }
 
 /** Square DOM element */

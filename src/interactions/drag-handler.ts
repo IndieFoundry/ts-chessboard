@@ -80,7 +80,7 @@ export function start(s: State, e: MouchEvent): void {
       originTarget: e.target,
       keyHasChanged: false,
     };
-    element.cgDragging = true;
+    element.cbDragging = true;
     element.classList.add('dragging');
 
     const ghost = s.dom.elements.ghost;
@@ -148,7 +148,7 @@ function processDrag(s: State): void {
         if (typeof cur.element === 'function') {
           const found = cur.element();
           if (!found) return;
-          found.cgDragging = true;
+          found.cbDragging = true;
           found.classList.add('dragging');
           cur.element = found;
         }
@@ -244,7 +244,7 @@ function isPieceNode(el: Node): el is PieceNode {
 function pieceElementByKey(s: State, key: Key): PieceNode | undefined {
   let el = s.dom.elements.board.firstChild;
   while (el) {
-    if (isPieceNode(el) && el.cgKey === key) return el;
+    if (isPieceNode(el) && el.cbKey === key) return el;
     el = el.nextSibling;
   }
   return;

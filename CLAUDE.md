@@ -63,8 +63,8 @@ src/
 │
 ├── styles/                     # CSS (all use CSS custom properties for theming)
 │   ├── base.css                # Base layout styles
-│   ├── theme-brown.css         # Brown board theme (customizable via --cg-* vars)
-│   └── pieces-cburnett.css     # CBurnett piece set (customizable via --cg-piece-* vars)
+│   ├── theme-brown.css         # Brown board theme (customizable via --chess-* vars)
+│   └── pieces-cburnett.css     # CBurnett piece set (customizable via --chess-piece-* vars)
 │
 └── demo/                       # Interactive demo app
     ├── App.tsx
@@ -92,10 +92,10 @@ Core types in `src/core/types.ts`:
 ## Theming
 
 All visual styles use CSS custom properties, allowing users to customize:
-- Board colors: `--cg-board-light`, `--cg-board-dark`
-- Highlights: `--cg-highlight-last-move`, `--cg-highlight-selected`, `--cg-highlight-check`
-- Move indicators: `--cg-move-dest`, `--cg-move-dest-hover`
-- Pieces: `--cg-piece-{role}-{color}` (e.g., `--cg-piece-king-white`)
+- Board colors: `--chess-board-light`, `--chess-board-dark`
+- Highlights: `--chess-highlight-last-move`, `--chess-highlight-selected`, `--chess-highlight-check`
+- Move indicators: `--chess-move-dest`, `--chess-move-dest-hover`
+- Pieces: `--chess-piece-{role}-{color}` (e.g., `--chess-piece-king-white`)
 
 See `README.md` for full theming documentation.
 

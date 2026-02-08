@@ -12,15 +12,15 @@ import { createElement as createSVG, setAttributes, createDefs } from './svg/sha
  * Renders the board DOM structure
  *
  * DOM hierarchy:
- * .cg-wrap (root element)
- *   cg-container
- *     cg-board
- *     svg.cg-shapes
+ * .chess-wrap (root element)
+ *   chess-container
+ *     chess-board
+ *     svg.chess-shapes
  *       defs
  *       g
- *     svg.cg-custom-svgs
+ *     svg.chess-custom-svgs
  *       g
- *     cg-auto-pieces
+ *     chess-auto-pieces
  *     coords.ranks
  *     coords.files
  *     piece.ghost
@@ -31,16 +31,16 @@ export function renderWrap(element: HTMLElement, s: HeadlessState): Elements {
     element.removeChild(element.firstChild);
   }
 
-  // ensure the cg-wrap class is set
-  element.classList.add('cg-wrap');
+  // ensure the chess-wrap class is set
+  element.classList.add('chess-wrap');
 
   for (const c of colors) element.classList.toggle('orientation-' + c, s.orientation === c);
   element.classList.toggle('manipulable', !s.viewOnly);
 
-  const container = createEl('cg-container');
+  const container = createEl('chess-container');
   element.appendChild(container);
 
-  const board = createEl('cg-board');
+  const board = createEl('chess-board');
   container.appendChild(board);
 
   let shapesBelow: SVGElement | undefined;
@@ -50,10 +50,10 @@ export function renderWrap(element: HTMLElement, s: HeadlessState): Elements {
   let autoPieces: HTMLElement | undefined;
 
   if (s.drawable.visible) {
-    [shapesBelow, shapes] = ['cg-shapes-below', 'cg-shapes'].map(cls => svgContainer(cls, true));
-    [customBelow, custom] = ['cg-custom-below', 'cg-custom-svgs'].map(cls => svgContainer(cls, false));
+    [shapesBelow, shapes] = ['chess-shapes-below', 'chess-shapes'].map(cls => svgContainer(cls, true));
+    [customBelow, custom] = ['chess-custom-below', 'chess-custom-svgs'].map(cls => svgContainer(cls, false));
 
-    autoPieces = createEl('cg-auto-pieces');
+    autoPieces = createEl('chess-auto-pieces');
 
     container.appendChild(shapesBelow);
     container.appendChild(customBelow);

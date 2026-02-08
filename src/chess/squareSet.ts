@@ -1,51 +1,50 @@
 /**
- * Immutable 64-bit set for representing chess squares.
- * Uses two 32-bit integers (lo/hi) since JavaScript lacks native 64-bit integers.
- * Original implementation for @indiefoundry/chessboard.
+ * Immutable 64-bit set for representing chess squares using native BigInt.
+ * Provides efficient bitboard operations for chess position manipulation.
+ * @indiefoundry/chessboard - Original implementation using BigInt.
  */
 
 import type { Color, Square } from './types';
 
-const countBits32 = (n: number): number => {
-  n = n - ((n >>> 1) & 0x5555_5555);
-  n = (n & 0x3333_3333) + ((n >>> 2) & 0x3333_3333);
-  return Math.imul((n + (n >>> 4)) & 0x0f0f_0f0f, 0x0101_0101) >> 24;
-};
-
-const reverseBytes32 = (n: number): number => {
-  n = ((n >>> 8) & 0x00ff_00ff) | ((n & 0x00ff_00ff) << 8);
-  return ((n >>> 16) & 0xffff) | ((n & 0xffff) << 16);
-};
-
-const reverseBits32 = (n: number): number => {
-  n = ((n >>> 1) & 0x5555_5555) | ((n & 0x5555_5555) << 1);
-  n = ((n >>> 2) & 0x3333_3333) | ((n & 0x3333_3333) << 2);
-  n = ((n >>> 4) & 0x0f0f_0f0f) | ((n & 0x0f0f_0f0f) << 4);
-  return reverseBytes32(n);
-};
+// Constants for bit operations
+const ZERO = 0n;
+const ONE = 1n;
+const FULL_MASK = (1n << 64n) - 1n;
+const LO_MASK = 0xFFFFFFFFn;
 
 /**
  * An immutable bitboard representing a set of squares.
+ * Uses BigInt internally for 64-bit operations.
  */
 export class SquareMask implements Iterable<Square> {
   readonly lo: number;
   readonly hi: number;
+  private readonly bits: bigint;
 
   constructor(lo: number, hi: number) {
     this.lo = lo | 0;
     this.hi = hi | 0;
+    // Convert two 32-bit signed integers to a 64-bit unsigned bigint
+    this.bits = (BigInt(this.hi >>> 0) << 32n) | BigInt(this.lo >>> 0);
+  }
+
+  private static fromBigInt(bits: bigint): SquareMask {
+    const masked = bits & FULL_MASK;
+    const lo = Number(masked & LO_MASK) | 0;
+    const hi = Number((masked >> 32n) & LO_MASK) | 0;
+    return new SquareMask(lo, hi);
   }
 
   static fromSquare(square: Square): SquareMask {
-    return square >= 32 ? new SquareMask(0, 1 << (square - 32)) : new SquareMask(1 << square, 0);
+    return SquareMask.fromBigInt(ONE << BigInt(square));
   }
 
   static fromRank(rank: number): SquareMask {
-    return new SquareMask(0xff, 0).shl64(8 * rank);
+    return SquareMask.fromBigInt(0xFFn << BigInt(8 * rank));
   }
 
   static fromFile(file: number): SquareMask {
-    return new SquareMask(0x0101_0101 << file, 0x0101_0101 << file);
+    return SquareMask.fromBigInt(0x0101010101010101n << BigInt(file));
   }
 
   static empty(): SquareMask {
@@ -53,115 +52,136 @@ export class SquareMask implements Iterable<Square> {
   }
 
   static full(): SquareMask {
-    return new SquareMask(0xffff_ffff, 0xffff_ffff);
+    return new SquareMask(-1, -1);
   }
 
   static corners(): SquareMask {
-    return new SquareMask(0x81, 0x8100_0000);
+    // a1, h1, a8, h8 = squares 0, 7, 56, 63
+    return SquareMask.fromBigInt(0x8100000000000081n);
   }
 
   static center(): SquareMask {
-    return new SquareMask(0x1800_0000, 0x18);
+    // d4, e4, d5, e5 = squares 27, 28, 35, 36
+    return SquareMask.fromBigInt(0x0000001818000000n);
   }
 
   static backranks(): SquareMask {
-    return new SquareMask(0xff, 0xff00_0000);
+    // Rank 1 and rank 8
+    return SquareMask.fromBigInt(0xFF000000000000FFn);
   }
 
   static backrank(color: Color): SquareMask {
-    return color === 'white' ? new SquareMask(0xff, 0) : new SquareMask(0, 0xff00_0000);
+    return color === 'white'
+      ? SquareMask.fromBigInt(0xFFn)
+      : SquareMask.fromBigInt(0xFF00000000000000n);
   }
 
   static lightSquares(): SquareMask {
-    return new SquareMask(0x55aa_55aa, 0x55aa_55aa);
+    return SquareMask.fromBigInt(0x55AA55AA55AA55AAn);
   }
 
   static darkSquares(): SquareMask {
-    return new SquareMask(0xaa55_aa55, 0xaa55_aa55);
+    return SquareMask.fromBigInt(0xAA55AA55AA55AA55n);
   }
 
   complement(): SquareMask {
-    return new SquareMask(~this.lo, ~this.hi);
+    return SquareMask.fromBigInt(~this.bits);
   }
 
   xor(other: SquareMask): SquareMask {
-    return new SquareMask(this.lo ^ other.lo, this.hi ^ other.hi);
+    return SquareMask.fromBigInt(this.bits ^ other.bits);
   }
 
   union(other: SquareMask): SquareMask {
-    return new SquareMask(this.lo | other.lo, this.hi | other.hi);
+    return SquareMask.fromBigInt(this.bits | other.bits);
   }
 
   intersect(other: SquareMask): SquareMask {
-    return new SquareMask(this.lo & other.lo, this.hi & other.hi);
+    return SquareMask.fromBigInt(this.bits & other.bits);
   }
 
   diff(other: SquareMask): SquareMask {
-    return new SquareMask(this.lo & ~other.lo, this.hi & ~other.hi);
+    return SquareMask.fromBigInt(this.bits & ~other.bits);
   }
 
   intersects(other: SquareMask): boolean {
-    return this.intersect(other).nonEmpty();
+    return (this.bits & other.bits) !== ZERO;
   }
 
   isDisjoint(other: SquareMask): boolean {
-    return this.intersect(other).isEmpty();
+    return (this.bits & other.bits) === ZERO;
   }
 
   supersetOf(other: SquareMask): boolean {
-    return other.diff(this).isEmpty();
+    return (other.bits & ~this.bits) === ZERO;
   }
 
   subsetOf(other: SquareMask): boolean {
-    return this.diff(other).isEmpty();
+    return (this.bits & ~other.bits) === ZERO;
   }
 
   shr64(shift: number): SquareMask {
     if (shift >= 64) return SquareMask.empty();
-    if (shift >= 32) return new SquareMask(this.hi >>> (shift - 32), 0);
-    if (shift > 0) return new SquareMask((this.lo >>> shift) ^ (this.hi << (32 - shift)), this.hi >>> shift);
-    return this;
+    if (shift <= 0) return this;
+    return SquareMask.fromBigInt(this.bits >> BigInt(shift));
   }
 
   shl64(shift: number): SquareMask {
     if (shift >= 64) return SquareMask.empty();
-    if (shift >= 32) return new SquareMask(0, this.lo << (shift - 32));
-    if (shift > 0) return new SquareMask(this.lo << shift, (this.hi << shift) ^ (this.lo >>> (32 - shift)));
-    return this;
+    if (shift <= 0) return this;
+    return SquareMask.fromBigInt(this.bits << BigInt(shift));
   }
 
   bswap64(): SquareMask {
-    return new SquareMask(reverseBytes32(this.hi), reverseBytes32(this.lo));
+    // Reverse bytes in the 64-bit value
+    let x = this.bits;
+    x = ((x >> 8n) & 0x00FF00FF00FF00FFn) | ((x & 0x00FF00FF00FF00FFn) << 8n);
+    x = ((x >> 16n) & 0x0000FFFF0000FFFFn) | ((x & 0x0000FFFF0000FFFFn) << 16n);
+    x = (x >> 32n) | (x << 32n);
+    return SquareMask.fromBigInt(x);
   }
 
   rbit64(): SquareMask {
-    return new SquareMask(reverseBits32(this.hi), reverseBits32(this.lo));
+    // Reverse all 64 bits
+    let x = this.bits;
+    x = ((x >> 1n) & 0x5555555555555555n) | ((x & 0x5555555555555555n) << 1n);
+    x = ((x >> 2n) & 0x3333333333333333n) | ((x & 0x3333333333333333n) << 2n);
+    x = ((x >> 4n) & 0x0F0F0F0F0F0F0F0Fn) | ((x & 0x0F0F0F0F0F0F0F0Fn) << 4n);
+    x = ((x >> 8n) & 0x00FF00FF00FF00FFn) | ((x & 0x00FF00FF00FF00FFn) << 8n);
+    x = ((x >> 16n) & 0x0000FFFF0000FFFFn) | ((x & 0x0000FFFF0000FFFFn) << 16n);
+    x = (x >> 32n) | (x << 32n);
+    return SquareMask.fromBigInt(x);
   }
 
   minus64(other: SquareMask): SquareMask {
-    const lo = this.lo - other.lo;
-    const c = ((lo & other.lo & 1) + (other.lo >>> 1) + (lo >>> 1)) >>> 31;
-    return new SquareMask(lo, this.hi - (other.hi + c));
+    return SquareMask.fromBigInt(this.bits - other.bits);
   }
 
   equals(other: SquareMask): boolean {
-    return this.lo === other.lo && this.hi === other.hi;
+    return this.bits === other.bits;
   }
 
   size(): number {
-    return countBits32(this.lo) + countBits32(this.hi);
+    // Population count using parallel bit counting
+    let x = this.bits;
+    x = x - ((x >> 1n) & 0x5555555555555555n);
+    x = (x & 0x3333333333333333n) + ((x >> 2n) & 0x3333333333333333n);
+    x = (x + (x >> 4n)) & 0x0F0F0F0F0F0F0F0Fn;
+    // Mask to 64 bits before shift to handle BigInt overflow
+    x = ((x * 0x0101010101010101n) & FULL_MASK) >> 56n;
+    return Number(x);
   }
 
   isEmpty(): boolean {
-    return this.lo === 0 && this.hi === 0;
+    return this.bits === ZERO;
   }
 
   nonEmpty(): boolean {
-    return this.lo !== 0 || this.hi !== 0;
+    return this.bits !== ZERO;
   }
 
   has(square: Square): boolean {
-    return (square >= 32 ? this.hi & (1 << (square - 32)) : this.lo & (1 << square)) !== 0;
+    return (this.bits & (ONE << BigInt(square))) !== ZERO;
   }
 
   set(square: Square, on: boolean): SquareMask {
@@ -169,42 +189,51 @@ export class SquareMask implements Iterable<Square> {
   }
 
   with(square: Square): SquareMask {
-    return square >= 32
-      ? new SquareMask(this.lo, this.hi | (1 << (square - 32)))
-      : new SquareMask(this.lo | (1 << square), this.hi);
+    return SquareMask.fromBigInt(this.bits | (ONE << BigInt(square)));
   }
 
   without(square: Square): SquareMask {
-    return square >= 32
-      ? new SquareMask(this.lo, this.hi & ~(1 << (square - 32)))
-      : new SquareMask(this.lo & ~(1 << square), this.hi);
+    return SquareMask.fromBigInt(this.bits & ~(ONE << BigInt(square)));
   }
 
   toggle(square: Square): SquareMask {
-    return square >= 32
-      ? new SquareMask(this.lo, this.hi ^ (1 << (square - 32)))
-      : new SquareMask(this.lo ^ (1 << square), this.hi);
+    return SquareMask.fromBigInt(this.bits ^ (ONE << BigInt(square)));
   }
 
   last(): Square | undefined {
-    if (this.hi !== 0) return 63 - Math.clz32(this.hi);
-    if (this.lo !== 0) return 31 - Math.clz32(this.lo);
-    return;
+    if (this.bits === ZERO) return undefined;
+    // Find position of highest set bit
+    let n = 63;
+    let x = this.bits;
+    if ((x & 0xFFFFFFFF00000000n) === ZERO) { n -= 32; x <<= 32n; }
+    if ((x & 0xFFFF000000000000n) === ZERO) { n -= 16; x <<= 16n; }
+    if ((x & 0xFF00000000000000n) === ZERO) { n -= 8; x <<= 8n; }
+    if ((x & 0xF000000000000000n) === ZERO) { n -= 4; x <<= 4n; }
+    if ((x & 0xC000000000000000n) === ZERO) { n -= 2; x <<= 2n; }
+    if ((x & 0x8000000000000000n) === ZERO) { n -= 1; }
+    return n;
   }
 
   first(): Square | undefined {
-    if (this.lo !== 0) return 31 - Math.clz32(this.lo & -this.lo);
-    if (this.hi !== 0) return 63 - Math.clz32(this.hi & -this.hi);
-    return;
+    if (this.bits === ZERO) return undefined;
+    // Find position of lowest set bit using trailing zeros count
+    const isolated = this.bits & (-this.bits);
+    let n = 0;
+    if ((isolated & 0x00000000FFFFFFFFn) === ZERO) n += 32;
+    if ((isolated & 0x0000FFFF0000FFFFn) === ZERO) n += 16;
+    if ((isolated & 0x00FF00FF00FF00FFn) === ZERO) n += 8;
+    if ((isolated & 0x0F0F0F0F0F0F0F0Fn) === ZERO) n += 4;
+    if ((isolated & 0x3333333333333333n) === ZERO) n += 2;
+    if ((isolated & 0x5555555555555555n) === ZERO) n += 1;
+    return n;
   }
 
   withoutFirst(): SquareMask {
-    if (this.lo !== 0) return new SquareMask(this.lo & (this.lo - 1), this.hi);
-    return new SquareMask(0, this.hi & (this.hi - 1));
+    return SquareMask.fromBigInt(this.bits & (this.bits - ONE));
   }
 
   moreThanOne(): boolean {
-    return (this.hi !== 0 && this.lo !== 0) || (this.lo & (this.lo - 1)) !== 0 || (this.hi & (this.hi - 1)) !== 0;
+    return (this.bits & (this.bits - ONE)) !== ZERO;
   }
 
   singleSquare(): Square | undefined {
@@ -212,32 +241,36 @@ export class SquareMask implements Iterable<Square> {
   }
 
   *[Symbol.iterator](): Iterator<Square> {
-    let lo = this.lo;
-    let hi = this.hi;
-    while (lo !== 0) {
-      const idx = 31 - Math.clz32(lo & -lo);
-      lo ^= 1 << idx;
-      yield idx;
-    }
-    while (hi !== 0) {
-      const idx = 31 - Math.clz32(hi & -hi);
-      hi ^= 1 << idx;
-      yield 32 + idx;
+    let bits = this.bits;
+    while (bits !== ZERO) {
+      const isolated = bits & (-bits);
+      // Count trailing zeros to find the square
+      let n = 0;
+      if ((isolated & 0x00000000FFFFFFFFn) === ZERO) n += 32;
+      if ((isolated & 0x0000FFFF0000FFFFn) === ZERO) n += 16;
+      if ((isolated & 0x00FF00FF00FF00FFn) === ZERO) n += 8;
+      if ((isolated & 0x0F0F0F0F0F0F0F0Fn) === ZERO) n += 4;
+      if ((isolated & 0x3333333333333333n) === ZERO) n += 2;
+      if ((isolated & 0x5555555555555555n) === ZERO) n += 1;
+      yield n;
+      bits &= bits - ONE;
     }
   }
 
   *reversed(): Iterable<Square> {
-    let lo = this.lo;
-    let hi = this.hi;
-    while (hi !== 0) {
-      const idx = 31 - Math.clz32(hi);
-      hi ^= 1 << idx;
-      yield 32 + idx;
-    }
-    while (lo !== 0) {
-      const idx = 31 - Math.clz32(lo);
-      lo ^= 1 << idx;
-      yield idx;
+    let bits = this.bits;
+    while (bits !== ZERO) {
+      // Find highest set bit
+      let n = 63;
+      let x = bits;
+      if ((x & 0xFFFFFFFF00000000n) === ZERO) { n -= 32; x <<= 32n; }
+      if ((x & 0xFFFF000000000000n) === ZERO) { n -= 16; x <<= 16n; }
+      if ((x & 0xFF00000000000000n) === ZERO) { n -= 8; x <<= 8n; }
+      if ((x & 0xF000000000000000n) === ZERO) { n -= 4; x <<= 4n; }
+      if ((x & 0xC000000000000000n) === ZERO) { n -= 2; x <<= 2n; }
+      if ((x & 0x8000000000000000n) === ZERO) { n -= 1; }
+      yield n;
+      bits &= ~(ONE << BigInt(n));
     }
   }
 }

@@ -190,7 +190,7 @@ export function App() {
             check: true,
           }}
           coordinates={true}
-          className={`cg-wrap theme-${boardTheme} pieces-${pieceSet}`}
+          className={`chess-wrap theme-${boardTheme} pieces-${pieceSet}`}
           style={{ width: '100%', aspectRatio: '1' }}
         />
       </div>

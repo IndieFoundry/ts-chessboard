@@ -32,7 +32,7 @@ export { createElement, setAttributes };
  */
 export function createDefs(): Element {
   const defs = createElement('defs');
-  const filter = setAttributes(createElement('filter'), { id: 'cg-filter-blur' });
+  const filter = setAttributes(createElement('filter'), { id: 'chess-filter-blur' });
   filter.appendChild(setAttributes(createElement('feGaussianBlur'), { stdDeviation: '0.013' }));
   defs.appendChild(filter);
   return defs;
@@ -100,7 +100,7 @@ function syncDefs(d: Drawable, shapes: SyncableShape[], els: Elements) {
     const keysInDom = new Set();
     let el: SVGElement | undefined = defsEl.firstElementChild as SVGElement;
     while (el) {
-      keysInDom.add(el.getAttribute('cgKey'));
+      keysInDom.add(el.getAttribute('cbKey'));
       el = el.nextElementSibling as SVGElement | undefined;
     }
     for (const [key, brush] of brushes.entries()) {
@@ -128,7 +128,7 @@ function syncShapes(
       let el: SVGElement | undefined = root.firstElementChild as SVGElement,
         elHash: Hash | null;
       while (el) {
-        elHash = el.getAttribute('cgHash') as Hash;
+        elHash = el.getAttribute('cbHash') as Hash;
         if (hashesInDom.has(elHash)) hashesInDom.set(elHash, true);
         else toRemove.push(el);
         el = el.nextElementSibling as SVGElement | undefined;
@@ -199,7 +199,7 @@ function renderShape(
     svgs: Svg[] = [];
 
   if (brush) {
-    const el = setAttributes(createElement('g'), { cgHash: hash });
+    const el = setAttributes(createElement('g'), { cbHash: hash });
     svgs.push({ el });
 
     if (from[0] !== to[0] || from[1] !== to[1])
@@ -216,7 +216,7 @@ function renderShape(
     const on = shape.customSvg.center ?? 'orig';
     const [x, y] =
       on === 'label' ? labelCoords(from, to, slots).map(c => c - 0.5) : on === 'dest' ? to : from;
-    const el = setAttributes(createElement('g'), { transform: `translate(${x},${y})`, cgHash: hash });
+    const el = setAttributes(createElement('g'), { transform: `translate(${x},${y})`, cbHash: hash });
     // customSvg.html is trusted content provided by the library consumer for custom shape rendering.
     // This is an intentional API feature - consumers provide their own SVG content for custom shapes.
     // The content is not user input but developer-defined configuration.
@@ -296,7 +296,7 @@ function renderArrow(
   if (!s.modifiers?.hilite) return renderLine(false);
 
   const g = setAttributes(createElement('g'), { opacity: brush.opacity });
-  const blurred = setAttributes(createElement('g'), { filter: 'url(#cg-filter-blur)' });
+  const blurred = setAttributes(createElement('g'), { filter: 'url(#chess-filter-blur)' });
   blurred.appendChild(filterBox(from, to));
   blurred.appendChild(renderLine(true));
   g.appendChild(blurred);
@@ -320,7 +320,7 @@ function renderMarker(brush: DrawBrush): SVGElement {
       fill: brush.color,
     }),
   );
-  marker.setAttribute('cgKey', brush.key);
+  marker.setAttribute('cbKey', brush.key);
   return marker;
 }
 
@@ -338,7 +338,7 @@ function renderLabel(
     cornerOff = corner === 'tr' ? 0.4 : 0,
     g = setAttributes(createElement('g'), {
       transform: `translate(${at[0] + cornerOff},${at[1] - cornerOff})`,
-      cgHash: hash,
+      cbHash: hash,
     });
   g.appendChild(
     setAttributes(createElement('circle'), {
@@ -471,7 +471,7 @@ export function syncShapesSimple(
   let el: SVGElement | undefined = root.firstElementChild as SVGElement,
     elHash: Hash | null;
   while (el) {
-    elHash = el.getAttribute('cgHash') as Hash;
+    elHash = el.getAttribute('cbHash') as Hash;
     if (hashesInDom.has(elHash)) hashesInDom.set(elHash, true);
     else toRemove.push(el);
     el = el.nextElementSibling as SVGElement | undefined;

@@ -1,7 +1,9 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import dts from 'vite-plugin-dts';
+import obfuscator from 'rollup-plugin-obfuscator';
 import { resolve } from 'path';
+
 export default defineConfig({
   test: {
     globals: true,
@@ -31,6 +33,23 @@ export default defineConfig({
           'react/jsx-runtime': 'jsxRuntime',
         },
       },
+      plugins: [
+        obfuscator({
+          options: {
+            compact: true,
+            controlFlowFlattening: false,
+            deadCodeInjection: false,
+            identifierNamesGenerator: 'hexadecimal',
+            renameGlobals: false,
+            selfDefending: false,
+            stringArray: true,
+            stringArrayEncoding: [],
+            stringArrayThreshold: 0.5,
+            transformObjectKeys: true,
+            unicodeEscapeSequence: false,
+          },
+        }),
+      ],
     },
     cssCodeSplit: false,
   },
