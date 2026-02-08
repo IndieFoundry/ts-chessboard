@@ -100,6 +100,11 @@ export function App() {
           setPosition(newPos);
           setLastMove([from, to]);
           setMoveHistory((prev) => [...prev, `${from}-${to}`]);
+
+          // Play any pending premove after AI move
+          setTimeout(() => {
+            boardRef.current?.api?.playPremove();
+          }, 10);
         }, 300);
         return () => clearTimeout(timeout);
       }
