@@ -1,21 +1,21 @@
 /**
  * Legal move generation and game state for standard chess.
  * Validates positions, generates legal moves, and detects checkmate/stalemate.
- * Part of @indiefoundry/chessboard's built-in chess engine.
+ * Original implementation for @indiefoundry/chessboard.
  */
 
 import {
-  between,
-  bishopAttacks,
-  kingAttacks,
-  knightAttacks,
-  pawnAttacks,
-  ray,
-  rookAttacks,
+  squaresBetween,
+  computeBishopMoves,
+  computeKingMoves,
+  computeKnightMoves,
+  computePawnCaptures,
+  getSquareRay,
+  computeRookMoves,
 } from './attacks';
-import { Board } from './board';
-import type { Setup } from './setup';
-import { SquareSet } from './squareSet';
+import { BitBoard } from './board';
+import type { GameSetup } from './setup';
+import { SquareMask } from './squareSet';
 import type {
   ByCastlingSide,
   ByColor,
@@ -27,58 +27,58 @@ import type {
   Piece,
   Square,
 } from './types';
-import { defined, kingCastlesTo, opposite, rookCastlesTo, squareRank } from './util';
+import { isDefined, kingCastleTarget, flipColor, rookCastleTarget, getRank } from './util';
 
 const COLORS: readonly Color[] = ['white', 'black'];
 const CASTLING_SIDES: readonly CastlingSide[] = ['a', 'h'];
 
-const attacksTo = (square: Square, attacker: Color, board: Board, occupied: SquareSet): SquareSet =>
+const computeAttackers = (square: Square, attacker: Color, board: BitBoard, occupied: SquareMask): SquareMask =>
   board[attacker].intersect(
-    rookAttacks(square, occupied)
+    computeRookMoves(square, occupied)
       .intersect(board.rooksAndQueens())
-      .union(bishopAttacks(square, occupied).intersect(board.bishopsAndQueens()))
-      .union(knightAttacks(square).intersect(board.knight))
-      .union(kingAttacks(square).intersect(board.king))
-      .union(pawnAttacks(opposite(attacker), square).intersect(board.pawn)),
+      .union(computeBishopMoves(square, occupied).intersect(board.bishopsAndQueens()))
+      .union(computeKnightMoves(square).intersect(board.knight))
+      .union(computeKingMoves(square).intersect(board.king))
+      .union(computePawnCaptures(flipColor(attacker), square).intersect(board.pawn)),
   );
 
-export class Castles {
-  castlingRights!: SquareSet;
+export class CastleRights {
+  castlingRights!: SquareMask;
   rook!: ByColor<ByCastlingSide<Square | undefined>>;
-  path!: ByColor<ByCastlingSide<SquareSet>>;
+  path!: ByColor<ByCastlingSide<SquareMask>>;
 
   private constructor() {}
 
-  static default(): Castles {
-    const castles = new Castles();
-    castles.castlingRights = SquareSet.corners();
+  static default(): CastleRights {
+    const castles = new CastleRights();
+    castles.castlingRights = SquareMask.corners();
     castles.rook = {
       white: { a: 0, h: 7 },
       black: { a: 56, h: 63 },
     };
     castles.path = {
-      white: { a: new SquareSet(0xe, 0), h: new SquareSet(0x60, 0) },
-      black: { a: new SquareSet(0, 0x0e000000), h: new SquareSet(0, 0x60000000) },
+      white: { a: new SquareMask(0xe, 0), h: new SquareMask(0x60, 0) },
+      black: { a: new SquareMask(0, 0x0e000000), h: new SquareMask(0, 0x60000000) },
     };
     return castles;
   }
 
-  static empty(): Castles {
-    const castles = new Castles();
-    castles.castlingRights = SquareSet.empty();
+  static empty(): CastleRights {
+    const castles = new CastleRights();
+    castles.castlingRights = SquareMask.empty();
     castles.rook = {
       white: { a: undefined, h: undefined },
       black: { a: undefined, h: undefined },
     };
     castles.path = {
-      white: { a: SquareSet.empty(), h: SquareSet.empty() },
-      black: { a: SquareSet.empty(), h: SquareSet.empty() },
+      white: { a: SquareMask.empty(), h: SquareMask.empty() },
+      black: { a: SquareMask.empty(), h: SquareMask.empty() },
     };
     return castles;
   }
 
-  clone(): Castles {
-    const castles = new Castles();
+  clone(): CastleRights {
+    const castles = new CastleRights();
     castles.castlingRights = this.castlingRights;
     castles.rook = {
       white: { a: this.rook.white.a, h: this.rook.white.h },
@@ -92,29 +92,29 @@ export class Castles {
   }
 
   private add(color: Color, side: CastlingSide, king: Square, rook: Square): void {
-    const kingTo = kingCastlesTo(color, side);
-    const rookTo = rookCastlesTo(color, side);
+    const kingTo = kingCastleTarget(color, side);
+    const rookTo = rookCastleTarget(color, side);
     this.castlingRights = this.castlingRights.with(rook);
     this.rook[color][side] = rook;
-    this.path[color][side] = between(rook, rookTo)
+    this.path[color][side] = squaresBetween(rook, rookTo)
       .with(rookTo)
-      .union(between(king, kingTo).with(kingTo))
+      .union(squaresBetween(king, kingTo).with(kingTo))
       .without(king)
       .without(rook);
   }
 
-  static fromSetup(setup: Setup): Castles {
-    const castles = Castles.empty();
+  static fromSetup(setup: GameSetup): CastleRights {
+    const castles = CastleRights.empty();
     const rooks = setup.castlingRights.intersect(setup.board.rook);
     for (const color of COLORS) {
-      const backrank = SquareSet.backrank(color);
+      const backrank = SquareMask.backrank(color);
       const king = setup.board.kingOf(color);
-      if (!defined(king) || !backrank.has(king)) continue;
+      if (!isDefined(king) || !backrank.has(king)) continue;
       const side = rooks.intersect(setup.board[color]).intersect(backrank);
       const aSide = side.first();
-      if (defined(aSide) && aSide < king) castles.add(color, 'a', king, aSide);
+      if (isDefined(aSide) && aSide < king) castles.add(color, 'a', king, aSide);
       const hSide = side.last();
-      if (defined(hSide) && king < hSide) castles.add(color, 'h', king, hSide);
+      if (isDefined(hSide) && king < hSide) castles.add(color, 'h', king, hSide);
     }
     return castles;
   }
@@ -131,67 +131,67 @@ export class Castles {
   }
 
   discardColor(color: Color): void {
-    this.castlingRights = this.castlingRights.diff(SquareSet.backrank(color));
+    this.castlingRights = this.castlingRights.diff(SquareMask.backrank(color));
     this.rook[color].a = undefined;
     this.rook[color].h = undefined;
   }
 }
 
-export interface Context {
+export interface MoveContext {
   king: Square | undefined;
-  blockers: SquareSet;
-  checkers: SquareSet;
+  blockers: SquareMask;
+  checkers: SquareMask;
 }
 
 /**
- * A legal chess position.
+ * A legal chess position with move generation.
  */
-export class Chess {
-  board!: Board;
+export class ChessPosition {
+  board!: BitBoard;
   turn!: Color;
-  castles!: Castles;
+  castles!: CastleRights;
   epSquare: Square | undefined;
   halfmoves!: number;
   fullmoves!: number;
 
   private constructor() {}
 
-  static default(): Chess {
-    const pos = new Chess();
-    pos.board = Board.default();
+  static default(): ChessPosition {
+    const pos = new ChessPosition();
+    pos.board = BitBoard.default();
     pos.turn = 'white';
-    pos.castles = Castles.default();
+    pos.castles = CastleRights.default();
     pos.epSquare = undefined;
     pos.halfmoves = 0;
     pos.fullmoves = 1;
     return pos;
   }
 
-  static fromSetup(setup: Setup): Chess | undefined {
-    const pos = new Chess();
+  static fromSetup(setup: GameSetup): ChessPosition | undefined {
+    const pos = new ChessPosition();
     pos.board = setup.board.clone();
     pos.turn = setup.turn;
-    pos.castles = Castles.fromSetup(setup);
-    pos.epSquare = validEpSquare(pos, setup.epSquare);
+    pos.castles = CastleRights.fromSetup(setup);
+    pos.epSquare = validateEnPassant(pos, setup.epSquare);
     pos.halfmoves = setup.halfmoves;
     pos.fullmoves = setup.fullmoves;
 
     // Validate position
     if (pos.board.occupied.isEmpty()) return undefined;
     if (pos.board.king.size() !== 2) return undefined;
-    if (!defined(pos.board.kingOf(pos.turn))) return undefined;
+    if (!isDefined(pos.board.kingOf(pos.turn))) return undefined;
 
-    const otherKing = pos.board.kingOf(opposite(pos.turn));
-    if (!defined(otherKing)) return undefined;
-    if (pos.kingAttackers(otherKing, pos.turn, pos.board.occupied).nonEmpty()) return undefined;
+    const otherKing = pos.board.kingOf(flipColor(pos.turn));
+    if (!isDefined(otherKing)) return undefined;
+    if (pos.findKingAttackers(otherKing, pos.turn, pos.board.occupied).nonEmpty()) return undefined;
 
-    if (SquareSet.backranks().intersects(pos.board.pawn)) return undefined;
+    if (SquareMask.backranks().intersects(pos.board.pawn)) return undefined;
 
     return pos;
   }
 
-  clone(): Chess {
-    const pos = new Chess();
+  clone(): ChessPosition {
+    const pos = new ChessPosition();
     pos.board = this.board.clone();
     pos.turn = this.turn;
     pos.castles = this.castles.clone();
@@ -201,7 +201,7 @@ export class Chess {
     return pos;
   }
 
-  toSetup(): Setup {
+  toSetup(): GameSetup {
     return {
       board: this.board.clone(),
       turn: this.turn,
@@ -212,39 +212,39 @@ export class Chess {
     };
   }
 
-  kingAttackers(square: Square, attacker: Color, occupied: SquareSet): SquareSet {
-    return attacksTo(square, attacker, this.board, occupied);
+  findKingAttackers(square: Square, attacker: Color, occupied: SquareMask): SquareMask {
+    return computeAttackers(square, attacker, this.board, occupied);
   }
 
-  ctx(): Context {
+  getMoveContext(): MoveContext {
     const king = this.board.kingOf(this.turn);
-    if (!defined(king)) {
-      return { king, blockers: SquareSet.empty(), checkers: SquareSet.empty() };
+    if (!isDefined(king)) {
+      return { king, blockers: SquareMask.empty(), checkers: SquareMask.empty() };
     }
-    const snipers = rookAttacks(king, SquareSet.empty())
+    const snipers = computeRookMoves(king, SquareMask.empty())
       .intersect(this.board.rooksAndQueens())
-      .union(bishopAttacks(king, SquareSet.empty()).intersect(this.board.bishopsAndQueens()))
-      .intersect(this.board[opposite(this.turn)]);
-    let blockers = SquareSet.empty();
+      .union(computeBishopMoves(king, SquareMask.empty()).intersect(this.board.bishopsAndQueens()))
+      .intersect(this.board[flipColor(this.turn)]);
+    let blockers = SquareMask.empty();
     for (const sniper of snipers) {
-      const b = between(king, sniper).intersect(this.board.occupied);
+      const b = squaresBetween(king, sniper).intersect(this.board.occupied);
       if (!b.moreThanOne()) blockers = blockers.union(b);
     }
-    const checkers = this.kingAttackers(king, opposite(this.turn), this.board.occupied);
+    const checkers = this.findKingAttackers(king, flipColor(this.turn), this.board.occupied);
     return { king, blockers, checkers };
   }
 
   /** Get legal destination squares for a piece on `square`. */
-  dests(square: Square, ctx?: Context): SquareSet {
-    ctx = ctx || this.ctx();
+  getLegalMoves(square: Square, ctx?: MoveContext): SquareMask {
+    ctx = ctx || this.getMoveContext();
     const piece = this.board.get(square);
-    if (!piece || piece.color !== this.turn) return SquareSet.empty();
+    if (!piece || piece.color !== this.turn) return SquareMask.empty();
 
-    let pseudo: SquareSet;
-    let legal: SquareSet | undefined;
+    let pseudo: SquareMask;
+    let legal: SquareMask | undefined;
 
     if (piece.role === 'pawn') {
-      pseudo = pawnAttacks(this.turn, square).intersect(this.board[opposite(this.turn)]);
+      pseudo = computePawnCaptures(this.turn, square).intersect(this.board[flipColor(this.turn)]);
       const delta = this.turn === 'white' ? 8 : -8;
       const step = square + delta;
       if (0 <= step && step < 64 && !this.board.occupied.has(step)) {
@@ -255,42 +255,42 @@ export class Chess {
           pseudo = pseudo.with(doubleStep);
         }
       }
-      if (defined(this.epSquare) && canCaptureEp(this, square, ctx)) {
-        legal = SquareSet.fromSquare(this.epSquare);
+      if (isDefined(this.epSquare) && isEnPassantLegal(this, square, ctx)) {
+        legal = SquareMask.fromSquare(this.epSquare);
       }
     } else if (piece.role === 'bishop') {
-      pseudo = bishopAttacks(square, this.board.occupied);
+      pseudo = computeBishopMoves(square, this.board.occupied);
     } else if (piece.role === 'knight') {
-      pseudo = knightAttacks(square);
+      pseudo = computeKnightMoves(square);
     } else if (piece.role === 'rook') {
-      pseudo = rookAttacks(square, this.board.occupied);
+      pseudo = computeRookMoves(square, this.board.occupied);
     } else if (piece.role === 'queen') {
-      pseudo = bishopAttacks(square, this.board.occupied).union(rookAttacks(square, this.board.occupied));
+      pseudo = computeBishopMoves(square, this.board.occupied).union(computeRookMoves(square, this.board.occupied));
     } else {
-      pseudo = kingAttacks(square);
+      pseudo = computeKingMoves(square);
     }
 
     pseudo = pseudo.diff(this.board[this.turn]);
 
-    if (defined(ctx.king)) {
+    if (isDefined(ctx.king)) {
       if (piece.role === 'king') {
         const occ = this.board.occupied.without(square);
         for (const to of pseudo) {
-          if (this.kingAttackers(to, opposite(this.turn), occ).nonEmpty()) {
+          if (this.findKingAttackers(to, flipColor(this.turn), occ).nonEmpty()) {
             pseudo = pseudo.without(to);
           }
         }
-        return pseudo.union(castlingDest(this, 'a', ctx)).union(castlingDest(this, 'h', ctx));
+        return pseudo.union(getCastlingSquare(this, 'a', ctx)).union(getCastlingSquare(this, 'h', ctx));
       }
 
       if (ctx.checkers.nonEmpty()) {
         const checker = ctx.checkers.singleSquare();
-        if (!defined(checker)) return SquareSet.empty();
-        pseudo = pseudo.intersect(between(checker, ctx.king).with(checker));
+        if (!isDefined(checker)) return SquareMask.empty();
+        pseudo = pseudo.intersect(squaresBetween(checker, ctx.king).with(checker));
       }
 
       if (ctx.blockers.has(square)) {
-        pseudo = pseudo.intersect(ray(square, ctx.king));
+        pseudo = pseudo.intersect(getSquareRay(square, ctx.king));
       }
     }
 
@@ -299,55 +299,55 @@ export class Chess {
   }
 
   /** Get all legal destinations as a Map from square to destinations. */
-  allDests(ctx?: Context): Map<Square, SquareSet> {
-    ctx = ctx || this.ctx();
-    const d = new Map<Square, SquareSet>();
+  getAllLegalMoves(ctx?: MoveContext): Map<Square, SquareMask> {
+    ctx = ctx || this.getMoveContext();
+    const d = new Map<Square, SquareMask>();
     for (const square of this.board[this.turn]) {
-      const sq = this.dests(square, ctx);
+      const sq = this.getLegalMoves(square, ctx);
       if (sq.nonEmpty()) d.set(square, sq);
     }
     return d;
   }
 
   /** Check if there are any legal moves. */
-  hasDests(ctx?: Context): boolean {
-    ctx = ctx || this.ctx();
+  hasLegalMoves(ctx?: MoveContext): boolean {
+    ctx = ctx || this.getMoveContext();
     for (const square of this.board[this.turn]) {
-      if (this.dests(square, ctx).nonEmpty()) return true;
+      if (this.getLegalMoves(square, ctx).nonEmpty()) return true;
     }
     return false;
   }
 
   /** Check if the move is legal. */
-  isLegal(move: Move, ctx?: Context): boolean {
+  isLegal(move: Move, ctx?: MoveContext): boolean {
     if ('role' in move) return false; // No drops in standard chess
     if (move.promotion === 'pawn' || move.promotion === 'king') return false;
-    if (!!move.promotion !== (this.board.pawn.has(move.from) && SquareSet.backranks().has(move.to))) return false;
-    const dests = this.dests(move.from, ctx);
-    return dests.has(move.to) || dests.has(normalizeMove(this, move).to);
+    if (!!move.promotion !== (this.board.pawn.has(move.from) && SquareMask.backranks().has(move.to))) return false;
+    const dests = this.getLegalMoves(move.from, ctx);
+    return dests.has(move.to) || dests.has(normalizeCastling(this, move).to);
   }
 
   /** Check if the side to move is in check. */
   isCheck(): boolean {
     const king = this.board.kingOf(this.turn);
-    return defined(king) && this.kingAttackers(king, opposite(this.turn), this.board.occupied).nonEmpty();
+    return isDefined(king) && this.findKingAttackers(king, flipColor(this.turn), this.board.occupied).nonEmpty();
   }
 
   /** Check if the game is over (checkmate, stalemate, or insufficient material). */
-  isEnd(ctx?: Context): boolean {
-    return this.isInsufficientMaterial() || !this.hasDests(ctx);
+  isEnd(ctx?: MoveContext): boolean {
+    return this.isInsufficientMaterial() || !this.hasLegalMoves(ctx);
   }
 
   /** Check if the side to move is checkmated. */
-  isCheckmate(ctx?: Context): boolean {
-    ctx = ctx || this.ctx();
-    return ctx.checkers.nonEmpty() && !this.hasDests(ctx);
+  isCheckmate(ctx?: MoveContext): boolean {
+    ctx = ctx || this.getMoveContext();
+    return ctx.checkers.nonEmpty() && !this.hasLegalMoves(ctx);
   }
 
   /** Check if the position is stalemate. */
-  isStalemate(ctx?: Context): boolean {
-    ctx = ctx || this.ctx();
-    return ctx.checkers.isEmpty() && !this.hasDests(ctx);
+  isStalemate(ctx?: MoveContext): boolean {
+    ctx = ctx || this.getMoveContext();
+    return ctx.checkers.isEmpty() && !this.hasLegalMoves(ctx);
   }
 
   /** Check for insufficient mating material. */
@@ -360,36 +360,36 @@ export class Chess {
     if (this.board[color].intersects(this.board.knight)) {
       return (
         this.board[color].size() <= 2 &&
-        this.board[opposite(color)].diff(this.board.king).diff(this.board.queen).isEmpty()
+        this.board[flipColor(color)].diff(this.board.king).diff(this.board.queen).isEmpty()
       );
     }
     if (this.board[color].intersects(this.board.bishop)) {
       const sameColor =
-        !this.board.bishop.intersects(SquareSet.darkSquares()) ||
-        !this.board.bishop.intersects(SquareSet.lightSquares());
+        !this.board.bishop.intersects(SquareMask.darkSquares()) ||
+        !this.board.bishop.intersects(SquareMask.lightSquares());
       return sameColor && this.board.pawn.isEmpty() && this.board.knight.isEmpty();
     }
     return true;
   }
 
   /** Get the game outcome, if any. */
-  outcome(ctx?: Context): Outcome | undefined {
-    ctx = ctx || this.ctx();
-    if (this.isCheckmate(ctx)) return { winner: opposite(this.turn) };
+  getOutcome(ctx?: MoveContext): Outcome | undefined {
+    ctx = ctx || this.getMoveContext();
+    if (this.isCheckmate(ctx)) return { winner: flipColor(this.turn) };
     if (this.isInsufficientMaterial() || this.isStalemate(ctx)) return { winner: undefined };
     return;
   }
 
   /** Play a move, mutating the position. Returns the captured piece if any. */
-  play(move: Move): Piece | undefined {
+  playMove(move: Move): Piece | undefined {
     const turn = this.turn;
     const epSquare = this.epSquare;
-    const castling = castlingSide(this, move);
+    const castling = getCastlingSide(this, move);
 
     this.epSquare = undefined;
     this.halfmoves += 1;
     if (turn === 'black') this.fullmoves += 1;
-    this.turn = opposite(turn);
+    this.turn = flipColor(turn);
 
     if ('role' in move) {
       // Drop move - not used in standard chess
@@ -419,10 +419,10 @@ export class Chess {
     } else if (piece.role === 'king') {
       if (castling) {
         const rookFrom = this.castles.rook[turn][castling];
-        if (defined(rookFrom)) {
+        if (isDefined(rookFrom)) {
           const rook = this.board.take(rookFrom);
-          this.board.set(kingCastlesTo(turn, castling), piece);
-          if (rook) this.board.set(rookCastlesTo(turn, castling), rook);
+          this.board.set(kingCastleTarget(turn, castling), piece);
+          if (rook) this.board.set(rookCastleTarget(turn, castling), rook);
         }
       }
       this.castles.discardColor(turn);
@@ -438,56 +438,65 @@ export class Chess {
 
     return captured;
   }
+
+  // Backwards compatibility aliases
+  kingAttackers = this.findKingAttackers;
+  ctx = this.getMoveContext;
+  dests = this.getLegalMoves;
+  allDests = this.getAllLegalMoves;
+  hasDests = this.hasLegalMoves;
+  outcome = this.getOutcome;
+  play = this.playMove;
 }
 
-const validEpSquare = (pos: Chess, square: Square | undefined): Square | undefined => {
-  if (!defined(square)) return;
+const validateEnPassant = (pos: ChessPosition, square: Square | undefined): Square | undefined => {
+  if (!isDefined(square)) return;
   const epRank = pos.turn === 'white' ? 5 : 2;
   const forward = pos.turn === 'white' ? 8 : -8;
-  if (squareRank(square) !== epRank) return;
+  if (getRank(square) !== epRank) return;
   if (pos.board.occupied.has(square + forward)) return;
   const pawn = square - forward;
-  if (!pos.board.pawn.has(pawn) || !pos.board[opposite(pos.turn)].has(pawn)) return;
+  if (!pos.board.pawn.has(pawn) || !pos.board[flipColor(pos.turn)].has(pawn)) return;
   return square;
 };
 
-const canCaptureEp = (pos: Chess, pawnFrom: Square, ctx: Context): boolean => {
-  if (!defined(pos.epSquare)) return false;
-  if (!pawnAttacks(pos.turn, pawnFrom).has(pos.epSquare)) return false;
-  if (!defined(ctx.king)) return true;
+const isEnPassantLegal = (pos: ChessPosition, pawnFrom: Square, ctx: MoveContext): boolean => {
+  if (!isDefined(pos.epSquare)) return false;
+  if (!computePawnCaptures(pos.turn, pawnFrom).has(pos.epSquare)) return false;
+  if (!isDefined(ctx.king)) return true;
   const delta = pos.turn === 'white' ? 8 : -8;
   const captured = pos.epSquare - delta;
   return pos
-    .kingAttackers(
+    .findKingAttackers(
       ctx.king,
-      opposite(pos.turn),
+      flipColor(pos.turn),
       pos.board.occupied.toggle(pawnFrom).toggle(captured).with(pos.epSquare),
     )
     .without(captured)
     .isEmpty();
 };
 
-const castlingDest = (pos: Chess, side: CastlingSide, ctx: Context): SquareSet => {
-  if (!defined(ctx.king) || ctx.checkers.nonEmpty()) return SquareSet.empty();
+const getCastlingSquare = (pos: ChessPosition, side: CastlingSide, ctx: MoveContext): SquareMask => {
+  if (!isDefined(ctx.king) || ctx.checkers.nonEmpty()) return SquareMask.empty();
   const rook = pos.castles.rook[pos.turn][side];
-  if (!defined(rook)) return SquareSet.empty();
-  if (pos.castles.path[pos.turn][side].intersects(pos.board.occupied)) return SquareSet.empty();
+  if (!isDefined(rook)) return SquareMask.empty();
+  if (pos.castles.path[pos.turn][side].intersects(pos.board.occupied)) return SquareMask.empty();
 
-  const kingTo = kingCastlesTo(pos.turn, side);
-  const kingPath = between(ctx.king, kingTo);
+  const kingTo = kingCastleTarget(pos.turn, side);
+  const kingPath = squaresBetween(ctx.king, kingTo);
   const occ = pos.board.occupied.without(ctx.king);
   for (const sq of kingPath) {
-    if (pos.kingAttackers(sq, opposite(pos.turn), occ).nonEmpty()) return SquareSet.empty();
+    if (pos.findKingAttackers(sq, flipColor(pos.turn), occ).nonEmpty()) return SquareMask.empty();
   }
 
-  const rookTo = rookCastlesTo(pos.turn, side);
+  const rookTo = rookCastleTarget(pos.turn, side);
   const after = pos.board.occupied.toggle(ctx.king).toggle(rook).toggle(rookTo);
-  if (pos.kingAttackers(kingTo, opposite(pos.turn), after).nonEmpty()) return SquareSet.empty();
+  if (pos.findKingAttackers(kingTo, flipColor(pos.turn), after).nonEmpty()) return SquareMask.empty();
 
-  return SquareSet.fromSquare(rook);
+  return SquareMask.fromSquare(rook);
 };
 
-export const castlingSide = (pos: Chess, move: Move): CastlingSide | undefined => {
+export const getCastlingSide = (pos: ChessPosition, move: Move): CastlingSide | undefined => {
   if ('role' in move) return;
   const delta = move.to - move.from;
   if (Math.abs(delta) !== 2 && !pos.board[pos.turn].has(move.to)) return;
@@ -495,12 +504,19 @@ export const castlingSide = (pos: Chess, move: Move): CastlingSide | undefined =
   return delta > 0 ? 'h' : 'a';
 };
 
-export const normalizeMove = (pos: Chess, move: Move): Move => {
-  const side = castlingSide(pos, move);
+export const normalizeCastling = (pos: ChessPosition, move: Move): Move => {
+  const side = getCastlingSide(pos, move);
   if (!side) return move;
   const rookFrom = pos.castles.rook[pos.turn][side];
   return {
     from: (move as NormalMove).from,
-    to: defined(rookFrom) ? rookFrom : move.to,
+    to: isDefined(rookFrom) ? rookFrom : move.to,
   };
 };
+
+// Backwards compatibility aliases
+export const Castles = CastleRights;
+export const Chess = ChessPosition;
+export type Context = MoveContext;
+export const castlingSide = getCastlingSide;
+export const normalizeMove = normalizeCastling;

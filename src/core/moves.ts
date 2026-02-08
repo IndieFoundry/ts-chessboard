@@ -1,5 +1,6 @@
 /**
- * Move execution and board logic
+ * Board interaction logic - handles piece movement, selection, and premoves.
+ * Original implementation for @indiefoundry/chessboard.
  */
 import type { Key, Piece, PiecesDiff, Color, Role, MoveMetadata, SetPremoveMetadata, Drop, NumberPair, Mobility } from './types';
 import type { PremoveState } from './premoves';
@@ -8,11 +9,9 @@ import { calculatePremoves } from './premoves';
 import { distanceSq, queenDir, knightDir, samePos } from '../utils/math';
 
 /**
- * State interface for move operations.
- * Defines the minimal state required by move functions, keeping this module
- * decoupled from the full engine state.
+ * State required by board interaction functions.
  */
-export interface MoveState extends PremoveState {
+export interface BoardInteractionState extends PremoveState {
   orientation: Color;
   selected?: Key;
   check?: Key;
@@ -81,97 +80,121 @@ export interface MoveState extends PremoveState {
   };
 }
 
-/**
- * Calls a user callback function asynchronously.
- * Uses setTimeout to defer execution until after paint, preventing UI callbacks
- * from blocking the current render cycle.
- */
-export function callUserFunction<T extends (...args: any[]) => void>(
-  f: T | undefined,
-  ...args: Parameters<T>
-): void {
-  if (f) setTimeout(() => f(...args), 1);
-}
+// For backwards compatibility
+export type MoveState = BoardInteractionState;
 
 /**
- * Toggles the board orientation
+ * Schedule a callback to run asynchronously after the current execution.
  */
-export function toggleOrientation(state: MoveState): void {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function scheduleCallback<T extends (...args: any[]) => void>(
+  fn: T | undefined,
+  ...args: Parameters<T>
+): void {
+  if (fn) setTimeout(() => fn(...args), 1);
+}
+
+// Backwards compatibility alias
+export const callUserFunction = scheduleCallback;
+
+/**
+ * Flip the board orientation.
+ */
+export function flipOrientation(state: BoardInteractionState): void {
   state.orientation = opposite(state.orientation);
   state.animation.current = state.draggable.current = state.selected = undefined;
 }
 
-/**
- * Resets the board state
- */
-export function reset(state: MoveState): void {
-  state.lastMove = undefined;
-  unselect(state);
-  unsetPremove(state);
-  unsetPredrop(state);
-}
+// Backwards compatibility alias
+export const toggleOrientation = flipOrientation;
 
 /**
- * Sets or removes pieces on the board
+ * Clear all transient state (selection, premoves, last move).
  */
-export function setPieces(state: MoveState, pieces: PiecesDiff): void {
-  for (const [key, piece] of pieces) {
+export function clearBoard(state: BoardInteractionState): void {
+  state.lastMove = undefined;
+  deselect(state);
+  clearQueuedPremove(state);
+  clearQueuedPredrop(state);
+}
+
+// Backwards compatibility alias
+export const reset = clearBoard;
+
+/**
+ * Apply piece changes to the board.
+ */
+export function applyPieceChanges(state: BoardInteractionState, changes: PiecesDiff): void {
+  for (const [key, piece] of changes) {
     if (piece) state.pieces.set(key, piece);
     else state.pieces.delete(key);
   }
 }
 
+// Backwards compatibility alias
+export const setPieces = applyPieceChanges;
+
 /**
- * Sets the check state
+ * Update the check highlight based on king position.
  */
-export function setCheck(state: MoveState, color: Color | boolean): void {
+export function updateCheckHighlight(state: BoardInteractionState, color: Color | boolean): void {
   state.check = undefined;
   if (color === true) color = state.turnColor;
-  if (color)
+  if (color) {
     for (const [k, p] of state.pieces) {
       if (p.role === 'king' && p.color === color) {
         state.check = k;
       }
     }
-}
-
-function setPremove(state: MoveState, orig: Key, dest: Key, meta: SetPremoveMetadata): void {
-  unsetPredrop(state);
-  state.premovable.current = [orig, dest];
-  callUserFunction(state.premovable.events.set, orig, dest, meta);
-}
-
-/**
- * Unsets the current premove
- */
-export function unsetPremove(state: MoveState): void {
-  if (state.premovable.current) {
-    state.premovable.current = undefined;
-    callUserFunction(state.premovable.events.unset);
   }
 }
 
-function setPredrop(state: MoveState, role: Role, key: Key): void {
-  unsetPremove(state);
-  state.predroppable.current = { role, key };
-  callUserFunction(state.predroppable.events.set, role, key);
+// Backwards compatibility alias
+export const setCheck = updateCheckHighlight;
+
+function queuePremove(state: BoardInteractionState, orig: Key, dest: Key, meta: SetPremoveMetadata): void {
+  clearQueuedPredrop(state);
+  state.premovable.current = [orig, dest];
+  scheduleCallback(state.premovable.events.set, orig, dest, meta);
 }
 
 /**
- * Unsets the current predrop
+ * Clear any queued premove.
  */
-export function unsetPredrop(state: MoveState): void {
+export function clearQueuedPremove(state: BoardInteractionState): void {
+  if (state.premovable.current) {
+    state.premovable.current = undefined;
+    scheduleCallback(state.premovable.events.unset);
+  }
+}
+
+// Backwards compatibility alias
+export const unsetPremove = clearQueuedPremove;
+
+function queuePredrop(state: BoardInteractionState, role: Role, key: Key): void {
+  clearQueuedPremove(state);
+  state.predroppable.current = { role, key };
+  scheduleCallback(state.predroppable.events.set, role, key);
+}
+
+/**
+ * Clear any queued predrop.
+ */
+export function clearQueuedPredrop(state: BoardInteractionState): void {
   const pd = state.predroppable;
   if (pd.current) {
     pd.current = undefined;
-    callUserFunction(pd.events.unset);
+    scheduleCallback(pd.events.unset);
   }
 }
 
+// Backwards compatibility alias
+export const unsetPredrop = clearQueuedPredrop;
+
 /**
- * Attempts auto-castling when the king moves to a rook
+ * Handle castling when king moves to rook square.
  */
-function tryAutoCastle(state: MoveState, orig: Key, dest: Key): boolean {
+function handleCastling(state: BoardInteractionState, orig: Key, dest: Key): boolean {
   if (!state.autoCastle) return false;
 
   const king = state.pieces.get(orig);
@@ -181,6 +204,7 @@ function tryAutoCastle(state: MoveState, orig: Key, dest: Key): boolean {
   const destPos = key2pos(dest);
   if ((origPos[1] !== 0 && origPos[1] !== 7) || origPos[1] !== destPos[1]) return false;
 
+  // Handle both standard (e1-g1) and rook-click (e1-h1) notation
   if (origPos[0] === 4 && !state.pieces.has(dest)) {
     if (destPos[0] === 6) dest = pos2keyUnsafe([7, destPos[1]]);
     else if (destPos[0] === 2) dest = pos2keyUnsafe([0, destPos[1]]);
@@ -193,55 +217,70 @@ function tryAutoCastle(state: MoveState, orig: Key, dest: Key): boolean {
   state.pieces.delete(dest);
 
   if (origPos[0] < destPos[0]) {
+    // Kingside
     state.pieces.set(pos2keyUnsafe([6, destPos[1]]), king);
     state.pieces.set(pos2keyUnsafe([5, destPos[1]]), rook);
   } else {
+    // Queenside
     state.pieces.set(pos2keyUnsafe([2, destPos[1]]), king);
     state.pieces.set(pos2keyUnsafe([3, destPos[1]]), rook);
   }
   return true;
 }
 
+// Backwards compatibility alias
+export const tryAutoCastle = handleCastling;
+
 /**
- * Executes a base move (without user move validation)
+ * Execute a move without user validation.
  */
-export function baseMove(state: MoveState, orig: Key, dest: Key): Piece | boolean {
-  const origPiece = state.pieces.get(orig),
-    destPiece = state.pieces.get(dest);
+export function executeMove(state: BoardInteractionState, orig: Key, dest: Key): Piece | boolean {
+  const origPiece = state.pieces.get(orig);
+  const destPiece = state.pieces.get(dest);
   if (orig === dest || !origPiece) return false;
+
   const captured = destPiece && destPiece.color !== origPiece.color ? destPiece : undefined;
-  if (dest === state.selected) unselect(state);
-  callUserFunction(state.events.move, orig, dest, captured);
-  if (!tryAutoCastle(state, orig, dest)) {
+  if (dest === state.selected) deselect(state);
+
+  scheduleCallback(state.events.move, orig, dest, captured);
+
+  if (!handleCastling(state, orig, dest)) {
     state.pieces.set(dest, origPiece);
     state.pieces.delete(orig);
   }
+
   state.lastMove = [orig, dest];
   state.check = undefined;
-  callUserFunction(state.events.change);
+  scheduleCallback(state.events.change);
   return captured || true;
 }
 
+// Backwards compatibility alias
+export const baseMove = executeMove;
+
 /**
- * Places a new piece on the board
+ * Place a new piece on the board.
  */
-export function baseNewPiece(state: MoveState, piece: Piece, key: Key, force?: boolean): boolean {
+export function placePiece(state: BoardInteractionState, piece: Piece, key: Key, force?: boolean): boolean {
   if (state.pieces.has(key)) {
     if (force) state.pieces.delete(key);
     else return false;
   }
-  callUserFunction(state.events.dropNewPiece, piece, key);
+  scheduleCallback(state.events.dropNewPiece, piece, key);
   state.pieces.set(key, piece);
   state.lastMove = [key];
   state.check = undefined;
-  callUserFunction(state.events.change);
+  scheduleCallback(state.events.change);
   state.movable.dests = undefined;
   state.turnColor = opposite(state.turnColor);
   return true;
 }
 
-function baseUserMove(state: MoveState, orig: Key, dest: Key): Piece | boolean {
-  const result = baseMove(state, orig, dest);
+// Backwards compatibility alias
+export const baseNewPiece = placePiece;
+
+function executeUserMove(state: BoardInteractionState, orig: Key, dest: Key): Piece | boolean {
+  const result = executeMove(state, orig, dest);
   if (result) {
     state.movable.dests = undefined;
     state.turnColor = opposite(state.turnColor);
@@ -250,69 +289,78 @@ function baseUserMove(state: MoveState, orig: Key, dest: Key): Piece | boolean {
   return result;
 }
 
+// Backwards compatibility alias
+export const baseUserMove = executeUserMove;
+
 /**
- * Executes a user move with validation
+ * Attempt a user-initiated move with validation.
  */
-export function userMove(state: MoveState, orig: Key, dest: Key): boolean {
-  if (canMove(state, orig, dest)) {
-    const result = baseUserMove(state, orig, dest);
+export function attemptMove(state: BoardInteractionState, orig: Key, dest: Key): boolean {
+  if (isMoveAllowed(state, orig, dest)) {
+    const result = executeUserMove(state, orig, dest);
     if (result) {
       const holdTime = state.hold.stop();
-      unselect(state);
+      deselect(state);
       const metadata: MoveMetadata = {
         premove: false,
         ctrlKey: state.stats.ctrlKey,
         holdTime,
       };
       if (result !== true) metadata.captured = result;
-      callUserFunction(state.movable.events.after, orig, dest, metadata);
+      scheduleCallback(state.movable.events.after, orig, dest, metadata);
       return true;
     }
-  } else if (canPremove(state, orig, dest)) {
-    setPremove(state, orig, dest, {
+  } else if (isPremoveAllowed(state, orig, dest)) {
+    queuePremove(state, orig, dest, {
       ctrlKey: state.stats.ctrlKey,
     });
-    unselect(state);
+    deselect(state);
     return true;
   }
-  unselect(state);
+  deselect(state);
   return false;
 }
 
+// Backwards compatibility alias
+export const userMove = attemptMove;
+
 /**
- * Drops a new piece on the board
+ * Drop a new piece onto the board.
  */
-export function dropNewPiece(state: MoveState, orig: Key, dest: Key, force?: boolean): void {
+export function attemptDrop(state: BoardInteractionState, orig: Key, dest: Key, force?: boolean): void {
   const piece = state.pieces.get(orig);
-  if (piece && (canDrop(state, orig, dest) || force)) {
+  if (piece && (isDropAllowed(state, orig, dest) || force)) {
     state.pieces.delete(orig);
-    baseNewPiece(state, piece, dest, force);
-    callUserFunction(state.movable.events.afterNewPiece, piece.role, dest, {
+    placePiece(state, piece, dest, force);
+    scheduleCallback(state.movable.events.afterNewPiece, piece.role, dest, {
       premove: false,
       predrop: false,
     });
-  } else if (piece && canPredrop(state, orig, dest)) {
-    setPredrop(state, piece.role, dest);
+  } else if (piece && isPredropAllowed(state, orig, dest)) {
+    queuePredrop(state, piece.role, dest);
   } else {
-    unsetPremove(state);
-    unsetPredrop(state);
+    clearQueuedPremove(state);
+    clearQueuedPredrop(state);
   }
   state.pieces.delete(orig);
-  unselect(state);
+  deselect(state);
 }
 
+// Backwards compatibility alias
+export const dropNewPiece = attemptDrop;
+
 /**
- * Selects a square
+ * Handle square selection.
  */
-export function selectSquare(state: MoveState, key: Key, force?: boolean): void {
-  callUserFunction(state.events.select, key);
+export function handleSquareClick(state: BoardInteractionState, key: Key, force?: boolean): void {
+  scheduleCallback(state.events.select, key);
   if (state.selected) {
     if (state.selected === key && !state.draggable.enabled) {
-      unselect(state);
+      deselect(state);
       state.hold.cancel();
       return;
     } else if ((state.selectable.enabled || force) && state.selected !== key) {
-      if (userMove(state, state.selected, key)) {
+      if (attemptMove(state, state.selected, key)) {
         state.stats.dragged = false;
         return;
       }
@@ -320,32 +368,41 @@ export function selectSquare(state: MoveState, key: Key, force?: boolean): void 
   }
   if (
     (state.selectable.enabled || state.draggable.enabled) &&
-    (isMovable(state, key) || isPremovable(state, key))
+    (canPieceMove(state, key) || canPiecePremove(state, key))
   ) {
-    setSelected(state, key);
+    markSelected(state, key);
     state.hold.start();
   }
 }
 
+// Backwards compatibility alias
+export const selectSquare = handleSquareClick;
+
 /**
- * Sets the selected square
+ * Mark a square as selected.
  */
-export function setSelected(state: MoveState, key: Key): void {
+export function markSelected(state: BoardInteractionState, key: Key): void {
   state.selected = key;
-  if (!isPremovable(state, key)) state.premovable.dests = undefined;
+  if (!canPiecePremove(state, key)) state.premovable.dests = undefined;
   else if (!state.premovable.customDests) state.premovable.dests = calculatePremoves(state, key);
 }
 
+// Backwards compatibility alias
+export const setSelected = markSelected;
+
 /**
- * Unselects the current square
+ * Clear current selection.
  */
-export function unselect(state: MoveState): void {
+export function deselect(state: BoardInteractionState): void {
   state.selected = undefined;
   state.premovable.dests = undefined;
   state.hold.cancel();
 }
 
-function isMovable(state: MoveState, orig: Key): boolean {
+// Backwards compatibility alias
+export const unselect = deselect;
+
+function canPieceMove(state: BoardInteractionState, orig: Key): boolean {
   const piece = state.pieces.get(orig);
   return (
     !!piece &&
@@ -354,15 +411,24 @@ function isMovable(state: MoveState, orig: Key): boolean {
   );
 }
 
-/**
- * Checks if a move is valid
- */
-export const canMove = (state: MoveState, orig: Key, dest: Key): boolean =>
-  orig !== dest &&
-  isMovable(state, orig) &&
-  (state.movable.free || !!state.movable.dests?.get(orig)?.includes(dest));
+// Backwards compatibility alias
+export const isMovable = canPieceMove;
 
-function canDrop(state: MoveState, orig: Key, dest: Key): boolean {
+/**
+ * Check if a move is allowed.
+ */
+export function isMoveAllowed(state: BoardInteractionState, orig: Key, dest: Key): boolean {
+  return (
+    orig !== dest &&
+    canPieceMove(state, orig) &&
+    (state.movable.free || !!state.movable.dests?.get(orig)?.includes(dest))
+  );
+}
+
+// Backwards compatibility alias
+export const canMove = isMoveAllowed;
+
+function isDropAllowed(state: BoardInteractionState, orig: Key, dest: Key): boolean {
   const piece = state.pieces.get(orig);
   return (
     !!piece &&
@@ -372,7 +438,10 @@ function canDrop(state: MoveState, orig: Key, dest: Key): boolean {
   );
 }
 
-function isPremovable(state: MoveState, orig: Key): boolean {
+// Backwards compatibility alias
+export const canDrop = isDropAllowed;
+
+function canPiecePremove(state: BoardInteractionState, orig: Key): boolean {
   const piece = state.pieces.get(orig);
   return (
     !!piece &&
@@ -382,12 +451,21 @@ function isPremovable(state: MoveState, orig: Key): boolean {
   );
 }
 
-const canPremove = (state: MoveState, orig: Key, dest: Key): boolean =>
-  orig !== dest &&
-  isPremovable(state, orig) &&
-  (state.premovable.customDests?.get(orig) ?? calculatePremoves(state, orig)).includes(dest);
+// Backwards compatibility alias
+export const isPremovable = canPiecePremove;
 
-function canPredrop(state: MoveState, orig: Key, dest: Key): boolean {
+function isPremoveAllowed(state: BoardInteractionState, orig: Key, dest: Key): boolean {
+  return (
+    orig !== dest &&
+    canPiecePremove(state, orig) &&
+    (state.premovable.customDests?.get(orig) ?? calculatePremoves(state, orig)).includes(dest)
+  );
+}
+
+// Backwards compatibility alias
+export const canPremove = isPremoveAllowed;
+
+function isPredropAllowed(state: BoardInteractionState, orig: Key, dest: Key): boolean {
   const piece = state.pieces.get(orig);
   const destPiece = state.pieces.get(dest);
   return (
@@ -400,10 +478,13 @@ function canPredrop(state: MoveState, orig: Key, dest: Key): boolean {
   );
 }
 
+// Backwards compatibility alias
+export const canPredrop = isPredropAllowed;
+
 /**
- * Checks if a piece is draggable
+ * Check if a piece can be dragged.
  */
-export function isDraggable(state: MoveState, orig: Key): boolean {
+export function canDrag(state: BoardInteractionState, orig: Key): boolean {
   const piece = state.pieces.get(orig);
   return (
     !!piece &&
@@ -413,73 +494,90 @@ export function isDraggable(state: MoveState, orig: Key): boolean {
   );
 }
 
+// Backwards compatibility alias
+export const isDraggable = canDrag;
+
 /**
- * Plays the current premove
+ * Execute queued premove if valid.
  */
-export function playPremove(state: MoveState): boolean {
+export function executePremove(state: BoardInteractionState): boolean {
   const move = state.premovable.current;
   if (!move) return false;
-  const orig = move[0],
-    dest = move[1];
+
+  const [orig, dest] = move;
   let success = false;
-  if (canMove(state, orig, dest)) {
-    const result = baseUserMove(state, orig, dest);
+
+  if (isMoveAllowed(state, orig, dest)) {
+    const result = executeUserMove(state, orig, dest);
     if (result) {
       const metadata: MoveMetadata = { premove: true };
       if (result !== true) metadata.captured = result;
-      callUserFunction(state.movable.events.after, orig, dest, metadata);
+      scheduleCallback(state.movable.events.after, orig, dest, metadata);
       success = true;
     }
   }
-  unsetPremove(state);
+  clearQueuedPremove(state);
   return success;
 }
 
+// Backwards compatibility alias
+export const playPremove = executePremove;
+
 /**
- * Plays the current predrop
+ * Execute queued predrop if valid.
  */
-export function playPredrop(state: MoveState, validate: (drop: Drop) => boolean): boolean {
+export function executePredrop(state: BoardInteractionState, validate: (drop: Drop) => boolean): boolean {
   const drop = state.predroppable.current;
-  let success = false;
   if (!drop) return false;
+
+  let success = false;
   if (validate(drop as Drop)) {
     const piece = {
       role: drop.role,
       color: state.movable.color,
     } as Piece;
-    if (baseNewPiece(state, piece, drop.key)) {
-      callUserFunction(state.movable.events.afterNewPiece, drop.role, drop.key, {
+    if (placePiece(state, piece, drop.key)) {
+      scheduleCallback(state.movable.events.afterNewPiece, drop.role, drop.key, {
         premove: false,
         predrop: true,
       });
       success = true;
     }
   }
-  unsetPredrop(state);
+  clearQueuedPredrop(state);
   return success;
 }
 
-/**
- * Cancels the current move
- */
-export function cancelMove(state: MoveState): void {
-  unsetPremove(state);
-  unsetPredrop(state);
-  unselect(state);
-}
+// Backwards compatibility alias
+export const playPredrop = executePredrop;
 
 /**
- * Stops all moves and interactions
+ * Cancel current move interaction.
  */
-export function stop(state: MoveState): void {
+export function abortMove(state: BoardInteractionState): void {
+  clearQueuedPremove(state);
+  clearQueuedPredrop(state);
+  deselect(state);
+}
+
+// Backwards compatibility alias
+export const cancelMove = abortMove;
+
+/**
+ * Stop all interactions.
+ */
+export function stopInteractions(state: BoardInteractionState): void {
   state.movable.color = state.movable.dests = state.animation.current = undefined;
-  cancelMove(state);
+  abortMove(state);
 }
 
+// Backwards compatibility alias
+export const stop = stopInteractions;
+
 /**
- * Gets the key at a DOM position
+ * Get the board key at a DOM position.
  */
-export function getKeyAtDomPos(
+export function keyAtPosition(
   pos: NumberPair,
   asWhite: boolean,
   bounds: DOMRectReadOnly,
@@ -491,10 +589,13 @@ export function getKeyAtDomPos(
   return file >= 0 && file < 8 && rank >= 0 && rank < 8 ? pos2key([file, rank]) : undefined;
 }
 
+// Backwards compatibility alias
+export const getKeyAtDomPos = keyAtPosition;
+
 /**
- * Gets the key at a DOM position, snapped to valid piece moves
+ * Get the board key at a position, snapped to valid moves.
  */
-export function getSnappedKeyAtDomPos(
+export function keyAtPositionSnapped(
   orig: Key,
   pos: NumberPair,
   asWhite: boolean,
@@ -518,7 +619,15 @@ export function getSnappedKeyAtDomPos(
   return pos2key(validSnapPos[closestSnapIndex]);
 }
 
+// Backwards compatibility alias
+export const getSnappedKeyAtDomPos = keyAtPositionSnapped;
+
 /**
- * Returns true if viewing the board as white
+ * Check if viewing as white.
  */
-export const whitePov = (s: { orientation: Color }): boolean => s.orientation === 'white';
+export function isWhitePerspective(s: { orientation: Color }): boolean {
+  return s.orientation === 'white';
+}
+
+// Backwards compatibility alias
+export const whitePov = isWhitePerspective;

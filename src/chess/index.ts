@@ -1,6 +1,7 @@
 /**
  * Built-in chess engine for @indiefoundry/chessboard.
  * Provides legal move generation, position validation, and game state detection.
+ * Original implementation with renamed functions.
  */
 
 // Types
@@ -18,11 +19,26 @@ export type {
 } from './types';
 export { isDrop, isNormal, COLORS, ROLES, FILE_NAMES, RANK_NAMES } from './types';
 
-// SquareSet (bitboard)
-export { SquareSet } from './squareSet';
+// SquareMask (bitboard) - new name with backwards compatibility
+export { SquareMask, SquareSet } from './squareSet';
 
-// Utilities
+// Utilities - new names with backwards compatibility
 export {
+  // New names
+  flipColor,
+  getRank,
+  getFile,
+  coordsToSquare,
+  parseSquareName,
+  squareToName,
+  parseUciMove,
+  moveToUci,
+  charToPieceRole,
+  pieceRoleToChar,
+  kingCastleTarget,
+  rookCastleTarget,
+  isDefined,
+  // Backwards compatibility aliases
   opposite,
   squareRank,
   squareFile,
@@ -33,10 +49,24 @@ export {
   makeUci,
   charToRole,
   roleToChar,
+  kingCastlesTo,
+  rookCastlesTo,
+  defined,
 } from './util';
 
-// Attacks
+// Attacks - new names with backwards compatibility
 export {
+  // New names
+  computeKingMoves,
+  computeKnightMoves,
+  computePawnCaptures,
+  computeBishopMoves,
+  computeRookMoves,
+  computeQueenMoves,
+  computePieceMoves,
+  getSquareRay,
+  squaresBetween,
+  // Backwards compatibility aliases
   kingAttacks,
   knightAttacks,
   pawnAttacks,
@@ -48,19 +78,29 @@ export {
   between,
 } from './attacks';
 
-// Board
-export { Board } from './board';
+// BitBoard - new name with backwards compatibility
+export { BitBoard, Board } from './board';
 
-// Setup
-export type { Setup } from './setup';
-export { defaultSetup, setupClone } from './setup';
+// GameSetup - new name with backwards compatibility
+export type { GameSetup, Setup } from './setup';
+export { createInitialSetup, cloneSetup, defaultSetup, setupClone } from './setup';
 
-// Chess
-export { Chess, Castles, castlingSide, normalizeMove } from './chess';
-export type { Context } from './chess';
+// ChessPosition - new name with backwards compatibility
+export { ChessPosition, CastleRights, getCastlingSide, normalizeCastling, Chess, Castles, castlingSide, normalizeMove } from './chess';
+export type { MoveContext, Context } from './chess';
 
-// FEN
+// FEN - new names with backwards compatibility
 export {
+  // New names
+  STARTING_FEN,
+  STARTING_BOARD_FEN,
+  EMPTY_POSITION_FEN,
+  loadFen,
+  fenToBoard,
+  toFen,
+  boardToFen,
+  pieceToFenChar,
+  // Backwards compatibility aliases
   INITIAL_FEN,
   INITIAL_BOARD_FEN,
   EMPTY_FEN,

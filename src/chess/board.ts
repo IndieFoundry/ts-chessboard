@@ -1,71 +1,71 @@
 /**
  * Board representation storing piece positions using bitboards.
- * Each piece type and color has its own SquareSet for efficient operations.
- * Part of @indiefoundry/chessboard's built-in chess engine.
+ * Each piece type and color has its own SquareMask for efficient operations.
+ * Original implementation for @indiefoundry/chessboard.
  */
 
-import { SquareSet } from './squareSet';
+import { SquareMask } from './squareSet';
 import type { ByColor, ByRole, Color, Piece, Role, Square } from './types';
 
 const COLORS_ARRAY: readonly Color[] = ['white', 'black'];
 const ROLES_ARRAY: readonly Role[] = ['pawn', 'knight', 'bishop', 'rook', 'queen', 'king'];
 
 /**
- * Piece positions on a board.
+ * Bitboard-based piece positions on a chessboard.
  */
-export class Board implements Iterable<[Square, Piece]>, ByRole<SquareSet>, ByColor<SquareSet> {
+export class BitBoard implements Iterable<[Square, Piece]>, ByRole<SquareMask>, ByColor<SquareMask> {
   /** All occupied squares. */
-  occupied!: SquareSet;
+  occupied!: SquareMask;
   /** Promoted pieces (for variants like Crazyhouse). */
-  promoted!: SquareSet;
+  promoted!: SquareMask;
 
-  white!: SquareSet;
-  black!: SquareSet;
+  white!: SquareMask;
+  black!: SquareMask;
 
-  pawn!: SquareSet;
-  knight!: SquareSet;
-  bishop!: SquareSet;
-  rook!: SquareSet;
-  queen!: SquareSet;
-  king!: SquareSet;
+  pawn!: SquareMask;
+  knight!: SquareMask;
+  bishop!: SquareMask;
+  rook!: SquareMask;
+  queen!: SquareMask;
+  king!: SquareMask;
 
   private constructor() {}
 
-  static default(): Board {
-    const board = new Board();
+  static default(): BitBoard {
+    const board = new BitBoard();
     board.reset();
     return board;
   }
 
   /** Resets all pieces to the default starting position for standard chess. */
   reset(): void {
-    this.occupied = new SquareSet(0xffff, 0xffff_0000);
-    this.promoted = SquareSet.empty();
-    this.white = new SquareSet(0xffff, 0);
-    this.black = new SquareSet(0, 0xffff_0000);
-    this.pawn = new SquareSet(0xff00, 0x00ff_0000);
-    this.knight = new SquareSet(0x42, 0x4200_0000);
-    this.bishop = new SquareSet(0x24, 0x2400_0000);
-    this.rook = new SquareSet(0x81, 0x8100_0000);
-    this.queen = new SquareSet(0x8, 0x0800_0000);
-    this.king = new SquareSet(0x10, 0x1000_0000);
+    this.occupied = new SquareMask(0xffff, 0xffff_0000);
+    this.promoted = SquareMask.empty();
+    this.white = new SquareMask(0xffff, 0);
+    this.black = new SquareMask(0, 0xffff_0000);
+    this.pawn = new SquareMask(0xff00, 0x00ff_0000);
+    this.knight = new SquareMask(0x42, 0x4200_0000);
+    this.bishop = new SquareMask(0x24, 0x2400_0000);
+    this.rook = new SquareMask(0x81, 0x8100_0000);
+    this.queen = new SquareMask(0x8, 0x0800_0000);
+    this.king = new SquareMask(0x10, 0x1000_0000);
   }
 
-  static empty(): Board {
-    const board = new Board();
+  static empty(): BitBoard {
+    const board = new BitBoard();
     board.clear();
     return board;
   }
 
   clear(): void {
-    this.occupied = SquareSet.empty();
-    this.promoted = SquareSet.empty();
-    for (const color of COLORS_ARRAY) this[color] = SquareSet.empty();
-    for (const role of ROLES_ARRAY) this[role] = SquareSet.empty();
+    this.occupied = SquareMask.empty();
+    this.promoted = SquareMask.empty();
+    for (const color of COLORS_ARRAY) this[color] = SquareMask.empty();
+    for (const role of ROLES_ARRAY) this[role] = SquareMask.empty();
   }
 
-  clone(): Board {
-    const board = new Board();
+  clone(): BitBoard {
+    const board = new BitBoard();
     board.occupied = this.occupied;
     board.promoted = this.promoted;
     for (const color of COLORS_ARRAY) board[color] = this[color];
@@ -126,15 +126,15 @@ export class Board implements Iterable<[Square, Piece]>, ByRole<SquareSet>, ByCo
     }
   }
 
-  pieces(color: Color, role: Role): SquareSet {
+  pieces(color: Color, role: Role): SquareMask {
     return this[color].intersect(this[role]);
   }
 
-  rooksAndQueens(): SquareSet {
+  rooksAndQueens(): SquareMask {
     return this.rook.union(this.queen);
   }
 
-  bishopsAndQueens(): SquareSet {
+  bishopsAndQueens(): SquareMask {
     return this.bishop.union(this.queen);
   }
 
@@ -143,3 +143,6 @@ export class Board implements Iterable<[Square, Piece]>, ByRole<SquareSet>, ByCo
     return this.pieces(color, 'king').singleSquare();
   }
 }
+
+// Backwards compatibility alias
+export const Board = BitBoard;

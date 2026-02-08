@@ -1,33 +1,33 @@
 /**
  * Immutable 64-bit set for representing chess squares.
  * Uses two 32-bit integers (lo/hi) since JavaScript lacks native 64-bit integers.
- * Part of @indiefoundry/chessboard's built-in chess engine.
+ * Original implementation for @indiefoundry/chessboard.
  */
 
 import type { Color, Square } from './types';
 
-const popcnt32 = (n: number): number => {
+const countBits32 = (n: number): number => {
   n = n - ((n >>> 1) & 0x5555_5555);
   n = (n & 0x3333_3333) + ((n >>> 2) & 0x3333_3333);
   return Math.imul((n + (n >>> 4)) & 0x0f0f_0f0f, 0x0101_0101) >> 24;
 };
 
-const bswap32 = (n: number): number => {
+const reverseBytes32 = (n: number): number => {
   n = ((n >>> 8) & 0x00ff_00ff) | ((n & 0x00ff_00ff) << 8);
   return ((n >>> 16) & 0xffff) | ((n & 0xffff) << 16);
 };
 
-const rbit32 = (n: number): number => {
+const reverseBits32 = (n: number): number => {
   n = ((n >>> 1) & 0x5555_5555) | ((n & 0x5555_5555) << 1);
   n = ((n >>> 2) & 0x3333_3333) | ((n & 0x3333_3333) << 2);
   n = ((n >>> 4) & 0x0f0f_0f0f) | ((n & 0x0f0f_0f0f) << 4);
-  return bswap32(n);
+  return reverseBytes32(n);
 };
 
 /**
- * An immutable set of squares, implemented as a bitboard.
+ * An immutable bitboard representing a set of squares.
  */
-export class SquareSet implements Iterable<Square> {
+export class SquareMask implements Iterable<Square> {
   readonly lo: number;
   readonly hi: number;
 
@@ -36,120 +36,120 @@ export class SquareSet implements Iterable<Square> {
     this.hi = hi | 0;
   }
 
-  static fromSquare(square: Square): SquareSet {
-    return square >= 32 ? new SquareSet(0, 1 << (square - 32)) : new SquareSet(1 << square, 0);
+  static fromSquare(square: Square): SquareMask {
+    return square >= 32 ? new SquareMask(0, 1 << (square - 32)) : new SquareMask(1 << square, 0);
   }
 
-  static fromRank(rank: number): SquareSet {
-    return new SquareSet(0xff, 0).shl64(8 * rank);
+  static fromRank(rank: number): SquareMask {
+    return new SquareMask(0xff, 0).shl64(8 * rank);
   }
 
-  static fromFile(file: number): SquareSet {
-    return new SquareSet(0x0101_0101 << file, 0x0101_0101 << file);
+  static fromFile(file: number): SquareMask {
+    return new SquareMask(0x0101_0101 << file, 0x0101_0101 << file);
   }
 
-  static empty(): SquareSet {
-    return new SquareSet(0, 0);
+  static empty(): SquareMask {
+    return new SquareMask(0, 0);
   }
 
-  static full(): SquareSet {
-    return new SquareSet(0xffff_ffff, 0xffff_ffff);
+  static full(): SquareMask {
+    return new SquareMask(0xffff_ffff, 0xffff_ffff);
   }
 
-  static corners(): SquareSet {
-    return new SquareSet(0x81, 0x8100_0000);
+  static corners(): SquareMask {
+    return new SquareMask(0x81, 0x8100_0000);
   }
 
-  static center(): SquareSet {
-    return new SquareSet(0x1800_0000, 0x18);
+  static center(): SquareMask {
+    return new SquareMask(0x1800_0000, 0x18);
   }
 
-  static backranks(): SquareSet {
-    return new SquareSet(0xff, 0xff00_0000);
+  static backranks(): SquareMask {
+    return new SquareMask(0xff, 0xff00_0000);
   }
 
-  static backrank(color: Color): SquareSet {
-    return color === 'white' ? new SquareSet(0xff, 0) : new SquareSet(0, 0xff00_0000);
+  static backrank(color: Color): SquareMask {
+    return color === 'white' ? new SquareMask(0xff, 0) : new SquareMask(0, 0xff00_0000);
   }
 
-  static lightSquares(): SquareSet {
-    return new SquareSet(0x55aa_55aa, 0x55aa_55aa);
+  static lightSquares(): SquareMask {
+    return new SquareMask(0x55aa_55aa, 0x55aa_55aa);
   }
 
-  static darkSquares(): SquareSet {
-    return new SquareSet(0xaa55_aa55, 0xaa55_aa55);
+  static darkSquares(): SquareMask {
+    return new SquareMask(0xaa55_aa55, 0xaa55_aa55);
   }
 
-  complement(): SquareSet {
-    return new SquareSet(~this.lo, ~this.hi);
+  complement(): SquareMask {
+    return new SquareMask(~this.lo, ~this.hi);
   }
 
-  xor(other: SquareSet): SquareSet {
-    return new SquareSet(this.lo ^ other.lo, this.hi ^ other.hi);
+  xor(other: SquareMask): SquareMask {
+    return new SquareMask(this.lo ^ other.lo, this.hi ^ other.hi);
   }
 
-  union(other: SquareSet): SquareSet {
-    return new SquareSet(this.lo | other.lo, this.hi | other.hi);
+  union(other: SquareMask): SquareMask {
+    return new SquareMask(this.lo | other.lo, this.hi | other.hi);
   }
 
-  intersect(other: SquareSet): SquareSet {
-    return new SquareSet(this.lo & other.lo, this.hi & other.hi);
+  intersect(other: SquareMask): SquareMask {
+    return new SquareMask(this.lo & other.lo, this.hi & other.hi);
   }
 
-  diff(other: SquareSet): SquareSet {
-    return new SquareSet(this.lo & ~other.lo, this.hi & ~other.hi);
+  diff(other: SquareMask): SquareMask {
+    return new SquareMask(this.lo & ~other.lo, this.hi & ~other.hi);
   }
 
-  intersects(other: SquareSet): boolean {
+  intersects(other: SquareMask): boolean {
     return this.intersect(other).nonEmpty();
   }
 
-  isDisjoint(other: SquareSet): boolean {
+  isDisjoint(other: SquareMask): boolean {
     return this.intersect(other).isEmpty();
   }
 
-  supersetOf(other: SquareSet): boolean {
+  supersetOf(other: SquareMask): boolean {
     return other.diff(this).isEmpty();
   }
 
-  subsetOf(other: SquareSet): boolean {
+  subsetOf(other: SquareMask): boolean {
     return this.diff(other).isEmpty();
   }
 
-  shr64(shift: number): SquareSet {
-    if (shift >= 64) return SquareSet.empty();
-    if (shift >= 32) return new SquareSet(this.hi >>> (shift - 32), 0);
-    if (shift > 0) return new SquareSet((this.lo >>> shift) ^ (this.hi << (32 - shift)), this.hi >>> shift);
+  shr64(shift: number): SquareMask {
+    if (shift >= 64) return SquareMask.empty();
+    if (shift >= 32) return new SquareMask(this.hi >>> (shift - 32), 0);
+    if (shift > 0) return new SquareMask((this.lo >>> shift) ^ (this.hi << (32 - shift)), this.hi >>> shift);
     return this;
   }
 
-  shl64(shift: number): SquareSet {
-    if (shift >= 64) return SquareSet.empty();
-    if (shift >= 32) return new SquareSet(0, this.lo << (shift - 32));
-    if (shift > 0) return new SquareSet(this.lo << shift, (this.hi << shift) ^ (this.lo >>> (32 - shift)));
+  shl64(shift: number): SquareMask {
+    if (shift >= 64) return SquareMask.empty();
+    if (shift >= 32) return new SquareMask(0, this.lo << (shift - 32));
+    if (shift > 0) return new SquareMask(this.lo << shift, (this.hi << shift) ^ (this.lo >>> (32 - shift)));
     return this;
   }
 
-  bswap64(): SquareSet {
-    return new SquareSet(bswap32(this.hi), bswap32(this.lo));
+  bswap64(): SquareMask {
+    return new SquareMask(reverseBytes32(this.hi), reverseBytes32(this.lo));
   }
 
-  rbit64(): SquareSet {
-    return new SquareSet(rbit32(this.hi), rbit32(this.lo));
+  rbit64(): SquareMask {
+    return new SquareMask(reverseBits32(this.hi), reverseBits32(this.lo));
   }
 
-  minus64(other: SquareSet): SquareSet {
+  minus64(other: SquareMask): SquareMask {
     const lo = this.lo - other.lo;
     const c = ((lo & other.lo & 1) + (other.lo >>> 1) + (lo >>> 1)) >>> 31;
-    return new SquareSet(lo, this.hi - (other.hi + c));
+    return new SquareMask(lo, this.hi - (other.hi + c));
   }
 
-  equals(other: SquareSet): boolean {
+  equals(other: SquareMask): boolean {
     return this.lo === other.lo && this.hi === other.hi;
   }
 
   size(): number {
-    return popcnt32(this.lo) + popcnt32(this.hi);
+    return countBits32(this.lo) + countBits32(this.hi);
   }
 
   isEmpty(): boolean {
@@ -164,26 +164,26 @@ export class SquareSet implements Iterable<Square> {
     return (square >= 32 ? this.hi & (1 << (square - 32)) : this.lo & (1 << square)) !== 0;
   }
 
-  set(square: Square, on: boolean): SquareSet {
+  set(square: Square, on: boolean): SquareMask {
     return on ? this.with(square) : this.without(square);
   }
 
-  with(square: Square): SquareSet {
+  with(square: Square): SquareMask {
     return square >= 32
-      ? new SquareSet(this.lo, this.hi | (1 << (square - 32)))
-      : new SquareSet(this.lo | (1 << square), this.hi);
+      ? new SquareMask(this.lo, this.hi | (1 << (square - 32)))
+      : new SquareMask(this.lo | (1 << square), this.hi);
   }
 
-  without(square: Square): SquareSet {
+  without(square: Square): SquareMask {
     return square >= 32
-      ? new SquareSet(this.lo, this.hi & ~(1 << (square - 32)))
-      : new SquareSet(this.lo & ~(1 << square), this.hi);
+      ? new SquareMask(this.lo, this.hi & ~(1 << (square - 32)))
+      : new SquareMask(this.lo & ~(1 << square), this.hi);
   }
 
-  toggle(square: Square): SquareSet {
+  toggle(square: Square): SquareMask {
     return square >= 32
-      ? new SquareSet(this.lo, this.hi ^ (1 << (square - 32)))
-      : new SquareSet(this.lo ^ (1 << square), this.hi);
+      ? new SquareMask(this.lo, this.hi ^ (1 << (square - 32)))
+      : new SquareMask(this.lo ^ (1 << square), this.hi);
   }
 
   last(): Square | undefined {
@@ -198,9 +198,9 @@ export class SquareSet implements Iterable<Square> {
     return;
   }
 
-  withoutFirst(): SquareSet {
-    if (this.lo !== 0) return new SquareSet(this.lo & (this.lo - 1), this.hi);
-    return new SquareSet(0, this.hi & (this.hi - 1));
+  withoutFirst(): SquareMask {
+    if (this.lo !== 0) return new SquareMask(this.lo & (this.lo - 1), this.hi);
+    return new SquareMask(0, this.hi & (this.hi - 1));
   }
 
   moreThanOne(): boolean {
@@ -241,3 +241,6 @@ export class SquareSet implements Iterable<Square> {
     }
   }
 }
+
+// Backwards compatibility alias
+export const SquareSet = SquareMask;

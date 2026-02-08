@@ -1,261 +1,425 @@
 /**
- * Piece rendering and synchronization
+ * Piece rendering and DOM synchronization.
+ * Original implementation for @indiefoundry/chessboard.
  */
 import type { State } from '../engine/state';
 import type { Key, Pieces, Piece, PieceNode, SquareNode, Pos, SquareClasses } from '../core/types';
-import type { AnimCurrent, AnimVectors, AnimVector, AnimFadings } from '../animation/animator';
+import type { ActiveTransition, MotionVectorMap, FadingPieceMap } from '../animation/animator';
 import type { DragCurrent } from '../interactions/drag-handler';
-import { key2pos } from '../core/squares';
-import { whitePov } from '../core/moves';
-import { createEl, translate, setVisible, posToTranslate as posToTranslateFromBounds } from '../utils/dom';
+import { key2pos, pos2key } from '../core/squares';
+import { isWhitePerspective } from '../core/moves';
+import { createEl, translate, setVisible, posToTranslate as computePixelPosition } from '../utils/dom';
 import { squaresBetween } from '../utils/math';
-import { pos2key } from '../core/squares';
 
-type PieceName = string; // `$color $role`
+/** Piece identifier string: `${color} ${role}` */
+type PieceIdentifier = string;
 
 /**
- * Main render function - synchronizes pieces with the DOM
+ * Check if a DOM node is a piece element.
  */
-export function render(s: State): void {
-  const asWhite: boolean = whitePov(s),
-    posToTranslate = posToTranslateFromBounds(s.dom.bounds()),
-    boardEl: HTMLElement = s.dom.elements.board,
-    pieces: Pieces = s.pieces,
-    curAnim: AnimCurrent | undefined = s.animation.current,
-    anims: AnimVectors = curAnim ? curAnim.plan.anims : new Map(),
-    fadings: AnimFadings = curAnim ? curAnim.plan.fadings : new Map(),
-    curDrag: DragCurrent | undefined = s.draggable.current,
-    samePieces: Set<Key> = new Set(),
-    movedPieces: Map<PieceName, PieceNode[]> = new Map(),
-    desiredSquares: SquareClasses = computeSquareClasses(s),
-    availableSquares: Map<string, SquareNode[]> = new Map();
-
-  let k: Key,
-    el: PieceNode | SquareNode | undefined,
-    pieceAtKey: Piece | undefined,
-    elPieceName: PieceName,
-    anim: AnimVector | undefined,
-    fading: Piece | undefined,
-    pMvdset: PieceNode[] | undefined,
-    pMvd: PieceNode | undefined,
-    sAvail: SquareNode | undefined;
-
-  // walk over all board dom elements, apply animations and flag moved pieces
-  el = boardEl.firstChild as PieceNode | SquareNode | undefined;
-  while (el) {
-    k = el.cgKey;
-    if (isPieceNode(el)) {
-      pieceAtKey = pieces.get(k);
-      anim = anims.get(k);
-      fading = fadings.get(k);
-      elPieceName = el.cgPiece;
-
-      if (el.cgDragging && (!curDrag || curDrag.orig !== k)) {
-        el.classList.remove('dragging');
-        translate(el, posToTranslate(key2pos(k), asWhite));
-        el.cgDragging = false;
-      }
-
-      if (!fading && el.cgFading) {
-        el.cgFading = false;
-        el.classList.remove('fading');
-      }
-
-      if (pieceAtKey) {
-        if (anim && el.cgAnimating && elPieceName === pieceNameOf(pieceAtKey)) {
-          const pos = key2pos(k);
-          pos[0] += anim[2];
-          pos[1] += anim[3];
-          el.classList.add('anim');
-          translate(el, posToTranslate(pos, asWhite));
-        } else if (el.cgAnimating) {
-          el.cgAnimating = false;
-          el.classList.remove('anim');
-          translate(el, posToTranslate(key2pos(k), asWhite));
-          if (s.addPieceZIndex) el.style.zIndex = posZIndex(key2pos(k), asWhite);
-        }
-
-        if (elPieceName === pieceNameOf(pieceAtKey) && (!fading || !el.cgFading)) samePieces.add(k);
-        else if (fading && elPieceName === pieceNameOf(fading)) {
-          el.classList.add('fading');
-          el.cgFading = true;
-        } else appendValue(movedPieces, elPieceName, el);
-      } else appendValue(movedPieces, elPieceName, el);
-    } else if (isSquareNode(el)) {
-      const cls = el.className;
-      if (desiredSquares.get(k) === cls) {
-        setVisible(el, true);
-        desiredSquares.delete(k);
-      } else appendValue(availableSquares, cls, el);
-    }
-    el = el.nextSibling as PieceNode | SquareNode | undefined;
-  }
-
-  // walk over all squares in current set, apply dom changes
-  for (const [sk, className] of desiredSquares) {
-    sAvail = availableSquares.get(className)?.pop();
-    const translation = posToTranslate(key2pos(sk), asWhite);
-    if (sAvail) {
-      sAvail.cgKey = sk;
-      translate(sAvail, translation);
-      setVisible(sAvail, true);
-    } else {
-      const squareNode = createEl('square', className) as SquareNode;
-      squareNode.cgKey = sk;
-      translate(squareNode, translation);
-      boardEl.insertBefore(squareNode, boardEl.firstChild);
-    }
-  }
-
-  // hide unused squares
-  for (const [_, nodes] of availableSquares.entries()) {
-    for (const node of nodes) setVisible(node, false);
-  }
-
-  // walk over all pieces in current set
-  for (const [k, p] of pieces) {
-    anim = anims.get(k);
-    if (!samePieces.has(k)) {
-      pMvdset = movedPieces.get(pieceNameOf(p));
-      pMvd = pMvdset && pMvdset.pop();
-
-      if (pMvd) {
-        pMvd.cgKey = k;
-        if (pMvd.cgFading) {
-          pMvd.classList.remove('fading');
-          pMvd.cgFading = false;
-        }
-        const pos = key2pos(k);
-        if (s.addPieceZIndex) pMvd.style.zIndex = posZIndex(pos, asWhite);
-        if (anim) {
-          pMvd.cgAnimating = true;
-          pMvd.classList.add('anim');
-          pos[0] += anim[2];
-          pos[1] += anim[3];
-        }
-        translate(pMvd, posToTranslate(pos, asWhite));
-      } else {
-        const pieceName = pieceNameOf(p),
-          pieceNode = createEl('piece', pieceName) as PieceNode,
-          pos = key2pos(k);
-
-        pieceNode.cgPiece = pieceName;
-        pieceNode.cgKey = k;
-        if (anim) {
-          pieceNode.cgAnimating = true;
-          pos[0] += anim[2];
-          pos[1] += anim[3];
-        }
-        translate(pieceNode, posToTranslate(pos, asWhite));
-
-        if (s.addPieceZIndex) pieceNode.style.zIndex = posZIndex(pos, asWhite);
-
-        boardEl.appendChild(pieceNode);
-      }
-    }
-  }
-
-  // remove remaining pieces
-  for (const nodes of movedPieces.values()) removeNodes(s, nodes);
+function isPieceElement(el: PieceNode | SquareNode): el is PieceNode {
+  return el.tagName === 'PIECE';
 }
 
 /**
- * Re-renders after resize
+ * Check if a DOM node is a square highlight element.
  */
-export function renderResized(s: State): void {
-  const asWhite: boolean = whitePov(s),
-    posToTranslate = posToTranslateFromBounds(s.dom.bounds());
-  let el = s.dom.elements.board.firstChild as PieceNode | SquareNode | undefined;
-  while (el) {
-    if ((isPieceNode(el) && !el.cgAnimating) || isSquareNode(el)) {
-      translate(el, posToTranslate(key2pos(el.cgKey), asWhite));
-    }
-    el = el.nextSibling as PieceNode | SquareNode | undefined;
-  }
+function isSquareElement(el: PieceNode | SquareNode): el is SquareNode {
+  return el.tagName === 'SQUARE';
 }
 
 /**
- * Updates bounds after resize
+ * Get a unique identifier for a piece (color + role).
  */
-export function updateBounds(s: State): void {
-  const bounds = s.dom.elements.wrap.getBoundingClientRect();
-  const container = s.dom.elements.container;
-  const ratio = bounds.height / bounds.width;
-  const width = (Math.floor((bounds.width * window.devicePixelRatio) / 8) * 8) / window.devicePixelRatio;
-  const height = width * ratio;
-  container.style.width = width + 'px';
-  container.style.height = height + 'px';
-  s.dom.bounds.clear();
-
-  s.addDimensionsCssVarsTo?.style.setProperty('--cg-width', width + 'px');
-  s.addDimensionsCssVarsTo?.style.setProperty('--cg-height', height + 'px');
+function getPieceIdentifier(piece: Piece): PieceIdentifier {
+  return `${piece.color} ${piece.role}`;
 }
 
-const isPieceNode = (el: PieceNode | SquareNode): el is PieceNode => el.tagName === 'PIECE';
-const isSquareNode = (el: PieceNode | SquareNode): el is SquareNode => el.tagName === 'SQUARE';
-
-function removeNodes(s: State, nodes: HTMLElement[]): void {
-  for (const node of nodes) s.dom.elements.board.removeChild(node);
-}
-
-function posZIndex(pos: Pos, asWhite: boolean): string {
-  const minZ = 3;
-  const rank = pos[1];
-  const z = asWhite ? minZ + 7 - rank : minZ + rank;
+/**
+ * Calculate z-index for a piece based on rank (for 3D boards).
+ */
+function calculateZIndex(coords: Pos, whiteBottom: boolean): string {
+  const baseZ = 3;
+  const rank = coords[1];
+  const z = whiteBottom ? baseZ + 7 - rank : baseZ + rank;
   return `${z}`;
 }
 
-const pieceNameOf = (piece: Piece): string => `${piece.color} ${piece.role}`;
+/**
+ * Remove DOM nodes from the board.
+ */
+function cleanupDomNodes(state: State, nodes: HTMLElement[]): void {
+  for (const node of nodes) {
+    state.dom.elements.board.removeChild(node);
+  }
+}
 
-const normalizeLastMoveStandardRookCastle = (s: State, k: Key): Key =>
-  !!s.lastMove?.[1] &&
-  !s.pieces.has(s.lastMove[1]) &&
-  s.lastMove[0][0] === 'e' &&
-  ['h', 'a'].includes(s.lastMove[1][0]) &&
-  s.lastMove[0][1] === s.lastMove[1][1] &&
-  squaresBetween(...key2pos(s.lastMove[0]), ...key2pos(s.lastMove[1]), pos2key).some(sq => s.pieces.has(sq))
-    ? (((k > s.lastMove[0] ? 'g' : 'c') + k[1]) as Key)
-    : k;
+/**
+ * Push a value to an array in a Map, creating the array if needed.
+ */
+function pushToMap<K, V>(map: Map<K, V[]>, key: K, value: V): void {
+  const existing = map.get(key);
+  if (existing) existing.push(value);
+  else map.set(key, [value]);
+}
 
-function computeSquareClasses(s: State): SquareClasses {
-  const squares: SquareClasses = new Map();
-  if (s.lastMove && s.highlight.lastMove)
-    for (const [i, k] of s.lastMove.entries())
-      addSquare(squares, i === 1 ? normalizeLastMoveStandardRookCastle(s, k) : k, 'last-move');
-  if (s.check && s.highlight.check) addSquare(squares, s.check, 'check');
-  if (s.selected) {
-    addSquare(squares, s.selected, 'selected');
-    if (s.movable.showDests) {
-      for (const k of s.movable.dests?.get(s.selected) ?? [])
-        addSquare(squares, k, 'move-dest' + (s.pieces.has(k) ? ' oc' : ''));
-      for (const k of s.premovable.customDests?.get(s.selected) ?? s.premovable.dests ?? [])
-        addSquare(squares, k, 'premove-dest' + (s.pieces.has(k) ? ' oc' : ''));
+/**
+ * Adjust last move destination for castling display.
+ * When castling with rook notation (e1-h1), show king destination instead.
+ */
+function adjustLastMoveForCastle(state: State, key: Key): Key {
+  const lastMove = state.lastMove;
+  if (!lastMove?.[1]) return key;
+
+  // Check if this looks like a castling move
+  const fromFile = lastMove[0][0];
+  const toFile = lastMove[1][0];
+  const fromRank = lastMove[0][1];
+  const toRank = lastMove[1][1];
+
+  if (
+    fromFile === 'e' &&
+    (toFile === 'h' || toFile === 'a') &&
+    fromRank === toRank &&
+    !state.pieces.has(lastMove[1])
+  ) {
+    // Check if there's a piece between origin and destination (the castled king)
+    const squaresInPath = squaresBetween(
+      ...key2pos(lastMove[0]),
+      ...key2pos(lastMove[1]),
+      pos2key
+    );
+    if (squaresInPath.some(sq => state.pieces.has(sq))) {
+      // This is a rook-notation castle, show king destination instead
+      const kingFile = key > lastMove[0] ? 'g' : 'c';
+      return (kingFile + key[1]) as Key;
     }
   }
-  const premove = s.premovable.current;
-  if (premove) for (const k of premove) addSquare(squares, k, 'current-premove');
-  else if (s.predroppable.current) addSquare(squares, s.predroppable.current.key, 'current-premove');
 
-  const o = s.exploding;
-  if (o) for (const k of o.keys) addSquare(squares, k, 'exploding' + o.stage);
+  return key;
+}
 
-  if (s.highlight.custom) {
-    s.highlight.custom.forEach((v: string, k: Key) => {
-      addSquare(squares, k, v);
+/**
+ * Add a CSS class to a square in the highlights map.
+ */
+function addHighlight(map: SquareClasses, key: Key, className: string): void {
+  const existing = map.get(key);
+  if (existing) {
+    map.set(key, `${existing} ${className}`);
+  } else {
+    map.set(key, className);
+  }
+}
+
+/**
+ * Build the map of squares that need visual highlighting.
+ */
+function buildSquareHighlights(state: State): SquareClasses {
+  const highlights: SquareClasses = new Map();
+
+  // Last move highlights
+  if (state.lastMove && state.highlight.lastMove) {
+    for (let i = 0; i < state.lastMove.length; i++) {
+      const key = state.lastMove[i];
+      // Adjust destination square for castling
+      const adjustedKey = i === 1 ? adjustLastMoveForCastle(state, key) : key;
+      addHighlight(highlights, adjustedKey, 'last-move');
+    }
+  }
+
+  // Check highlight
+  if (state.check && state.highlight.check) {
+    addHighlight(highlights, state.check, 'check');
+  }
+
+  // Selected square and move destinations
+  if (state.selected) {
+    addHighlight(highlights, state.selected, 'selected');
+
+    if (state.movable.showDests) {
+      // Regular move destinations
+      const destinations = state.movable.dests?.get(state.selected) ?? [];
+      for (const dest of destinations) {
+        const className = state.pieces.has(dest) ? 'move-dest oc' : 'move-dest';
+        addHighlight(highlights, dest, className);
+      }
+
+      // Premove destinations
+      const premoveDestinations = state.premovable.customDests?.get(state.selected) ?? state.premovable.dests ?? [];
+      for (const dest of premoveDestinations) {
+        const className = state.pieces.has(dest) ? 'premove-dest oc' : 'premove-dest';
+        addHighlight(highlights, dest, className);
+      }
+    }
+  }
+
+  // Current premove highlight
+  const premove = state.premovable.current;
+  if (premove) {
+    for (const key of premove) {
+      addHighlight(highlights, key, 'current-premove');
+    }
+  } else if (state.predroppable.current) {
+    addHighlight(highlights, state.predroppable.current.key, 'current-premove');
+  }
+
+  // Explosion effects (atomic chess)
+  const explosion = state.exploding;
+  if (explosion) {
+    for (const key of explosion.keys) {
+      addHighlight(highlights, key, 'exploding' + explosion.stage);
+    }
+  }
+
+  // Custom user-defined highlights
+  if (state.highlight.custom) {
+    state.highlight.custom.forEach((className: string, key: Key) => {
+      addHighlight(highlights, key, className);
     });
   }
 
-  return squares;
+  return highlights;
 }
 
-function addSquare(squares: SquareClasses, key: Key, klass: string): void {
-  const classes = squares.get(key);
-  if (classes) squares.set(key, `${classes} ${klass}`);
-  else squares.set(key, klass);
+/**
+ * Main DOM synchronization function.
+ * Updates piece and square elements to match current board state.
+ */
+export function syncPiecesWithDom(state: State): void {
+  const whiteBottom = isWhitePerspective(state);
+  const posToPixel = computePixelPosition(state.dom.bounds());
+  const boardElement = state.dom.elements.board;
+  const pieces: Pieces = state.pieces;
+
+  // Get current animation state
+  const activeAnimation: ActiveTransition | undefined = state.animation.current;
+  const motions: MotionVectorMap = activeAnimation ? activeAnimation.plan.anims : new Map();
+  const fadings: FadingPieceMap = activeAnimation ? activeAnimation.plan.fadings : new Map();
+
+  // Get current drag state
+  const activeDrag: DragCurrent | undefined = state.draggable.current;
+
+  // Track which pieces are already in correct position
+  const unchangedPieces: Set<Key> = new Set();
+
+  // Track pieces that need to be relocated
+  const relocatablePieces: Map<PieceIdentifier, PieceNode[]> = new Map();
+
+  // Compute desired square highlights
+  const desiredHighlights: SquareClasses = buildSquareHighlights(state);
+
+  // Track available square elements for reuse
+  const availableSquareElements: Map<string, SquareNode[]> = new Map();
+
+  // Walk through all existing DOM elements
+  let element = boardElement.firstChild as PieceNode | SquareNode | undefined;
+
+  while (element) {
+    const key = element.cgKey;
+
+    if (isPieceElement(element)) {
+      const pieceAtKey = pieces.get(key);
+      const motion = motions.get(key);
+      const fading = fadings.get(key);
+      const elementPieceId = element.cgPiece;
+
+      // Handle drag state cleanup
+      if (element.cgDragging && (!activeDrag || activeDrag.orig !== key)) {
+        element.classList.remove('dragging');
+        translate(element, posToPixel(key2pos(key), whiteBottom));
+        element.cgDragging = false;
+      }
+
+      // Handle fading state cleanup
+      if (!fading && element.cgFading) {
+        element.cgFading = false;
+        element.classList.remove('fading');
+      }
+
+      if (pieceAtKey) {
+        // There should be a piece at this position
+        if (motion && element.cgAnimating && elementPieceId === getPieceIdentifier(pieceAtKey)) {
+          // Piece is animating - apply motion offset
+          const coords = key2pos(key);
+          coords[0] += motion[2];
+          coords[1] += motion[3];
+          element.classList.add('anim');
+          translate(element, posToPixel(coords, whiteBottom));
+        } else if (element.cgAnimating) {
+          // Animation complete - reset to final position
+          element.cgAnimating = false;
+          element.classList.remove('anim');
+          translate(element, posToPixel(key2pos(key), whiteBottom));
+          if (state.addPieceZIndex) {
+            element.style.zIndex = calculateZIndex(key2pos(key), whiteBottom);
+          }
+        }
+
+        // Check if piece matches what should be there
+        if (elementPieceId === getPieceIdentifier(pieceAtKey) && (!fading || !element.cgFading)) {
+          unchangedPieces.add(key);
+        } else if (fading && elementPieceId === getPieceIdentifier(fading)) {
+          // This piece is fading out
+          element.classList.add('fading');
+          element.cgFading = true;
+        } else {
+          // Piece needs to be relocated
+          pushToMap(relocatablePieces, elementPieceId, element);
+        }
+      } else {
+        // No piece should be here - mark for reuse or removal
+        pushToMap(relocatablePieces, elementPieceId, element);
+      }
+    } else if (isSquareElement(element)) {
+      // Handle square highlight elements
+      const className = element.className;
+      if (desiredHighlights.get(key) === className) {
+        setVisible(element, true);
+        desiredHighlights.delete(key);
+      } else {
+        pushToMap(availableSquareElements, className, element);
+      }
+    }
+
+    element = element.nextSibling as PieceNode | SquareNode | undefined;
+  }
+
+  // Create or reposition square highlight elements
+  for (const [key, className] of desiredHighlights) {
+    const available = availableSquareElements.get(className)?.pop();
+    const pixelPosition = posToPixel(key2pos(key), whiteBottom);
+
+    if (available) {
+      // Reuse existing element
+      available.cgKey = key;
+      translate(available, pixelPosition);
+      setVisible(available, true);
+    } else {
+      // Create new element
+      const squareElement = createEl('square', className) as SquareNode;
+      squareElement.cgKey = key;
+      translate(squareElement, pixelPosition);
+      boardElement.insertBefore(squareElement, boardElement.firstChild);
+    }
+  }
+
+  // Hide unused square elements
+  for (const nodes of availableSquareElements.values()) {
+    for (const node of nodes) {
+      setVisible(node, false);
+    }
+  }
+
+  // Create or reposition piece elements
+  for (const [key, piece] of pieces) {
+    const motion = motions.get(key);
+
+    if (!unchangedPieces.has(key)) {
+      const pieceId = getPieceIdentifier(piece);
+      const relocatable = relocatablePieces.get(pieceId)?.pop();
+
+      if (relocatable) {
+        // Reuse existing piece element
+        relocatable.cgKey = key;
+
+        if (relocatable.cgFading) {
+          relocatable.classList.remove('fading');
+          relocatable.cgFading = false;
+        }
+
+        const coords = key2pos(key);
+        if (state.addPieceZIndex) {
+          relocatable.style.zIndex = calculateZIndex(coords, whiteBottom);
+        }
+
+        if (motion) {
+          relocatable.cgAnimating = true;
+          relocatable.classList.add('anim');
+          coords[0] += motion[2];
+          coords[1] += motion[3];
+        }
+
+        translate(relocatable, posToPixel(coords, whiteBottom));
+      } else {
+        // Create new piece element
+        const pieceElement = createEl('piece', pieceId) as PieceNode;
+        const coords = key2pos(key);
+
+        pieceElement.cgPiece = pieceId;
+        pieceElement.cgKey = key;
+
+        if (motion) {
+          pieceElement.cgAnimating = true;
+          coords[0] += motion[2];
+          coords[1] += motion[3];
+        }
+
+        translate(pieceElement, posToPixel(coords, whiteBottom));
+
+        if (state.addPieceZIndex) {
+          pieceElement.style.zIndex = calculateZIndex(coords, whiteBottom);
+        }
+
+        boardElement.appendChild(pieceElement);
+      }
+    }
+  }
+
+  // Remove unused piece elements
+  for (const nodes of relocatablePieces.values()) {
+    cleanupDomNodes(state, nodes);
+  }
 }
 
-function appendValue<K, V>(map: Map<K, V[]>, key: K, value: V): void {
-  const arr = map.get(key);
-  if (arr) arr.push(value);
-  else map.set(key, [value]);
+// Backwards compatibility alias
+export const render = syncPiecesWithDom;
+
+/**
+ * Reposition all elements after a board resize.
+ */
+export function repositionAfterResize(state: State): void {
+  const whiteBottom = isWhitePerspective(state);
+  const posToPixel = computePixelPosition(state.dom.bounds());
+
+  let element = state.dom.elements.board.firstChild as PieceNode | SquareNode | undefined;
+
+  while (element) {
+    // Only reposition elements that aren't currently animating
+    if ((isPieceElement(element) && !element.cgAnimating) || isSquareElement(element)) {
+      translate(element, posToPixel(key2pos(element.cgKey), whiteBottom));
+    }
+    element = element.nextSibling as PieceNode | SquareNode | undefined;
+  }
 }
+
+// Backwards compatibility alias
+export const renderResized = repositionAfterResize;
+
+/**
+ * Recalculate board dimensions and update CSS variables.
+ */
+export function recalculateBoardBounds(state: State): void {
+  const wrapBounds = state.dom.elements.wrap.getBoundingClientRect();
+  const container = state.dom.elements.container;
+
+  // Calculate dimensions that align to device pixels for crisp rendering
+  const aspectRatio = wrapBounds.height / wrapBounds.width;
+  const pixelRatio = window.devicePixelRatio;
+  const alignedWidth = (Math.floor((wrapBounds.width * pixelRatio) / 8) * 8) / pixelRatio;
+  const alignedHeight = alignedWidth * aspectRatio;
+
+  container.style.width = alignedWidth + 'px';
+  container.style.height = alignedHeight + 'px';
+
+  // Clear cached bounds
+  state.dom.bounds.clear();
+
+  // Update CSS variables if configured
+  if (state.addDimensionsCssVarsTo) {
+    state.addDimensionsCssVarsTo.style.setProperty('--cg-width', alignedWidth + 'px');
+    state.addDimensionsCssVarsTo.style.setProperty('--cg-height', alignedHeight + 'px');
+  }
+}
+
+// Backwards compatibility alias
+export const updateBounds = recalculateBoardBounds;
