@@ -85,7 +85,9 @@ export function start(s: State, e: MouchEvent): void {
 
     const ghost = s.dom.elements.ghost;
     if (ghost) {
-      ghost.className = `ghost ${piece.color} ${piece.role}`;
+      ghost.className = 'cb-phantom';
+      ghost.dataset.c = piece.color === 'white' ? 'w' : 'b';
+      ghost.dataset.r = piece.role[0] === 'k' && piece.role[1] === 'n' ? 'n' : piece.role[0];
       translate(ghost, posToTranslate(bounds)(key2pos(orig), moves.whitePov(s)));
       setVisible(ghost, true);
     }
@@ -238,7 +240,7 @@ function removeDragElements(s: State): void {
 }
 
 function isPieceNode(el: Node): el is PieceNode {
-  return (el as HTMLElement).tagName === 'PIECE';
+  return (el as HTMLElement).classList?.contains('cb-piece');
 }
 
 function pieceElementByKey(s: State, key: Key): PieceNode | undefined {

@@ -11,28 +11,36 @@ import { isWhitePerspective } from '../core/moves';
 import { createEl, translate, setVisible, posToTranslate as computePixelPosition } from '../utils/dom';
 import { squaresBetween } from '../utils/math';
 
-/** Piece identifier string: `${color} ${role}` */
+/** Piece identifier string: `${colorCode}${roleCode}` */
 type PieceIdentifier = string;
+
+/** Color to single-char code */
+const colorCode: Record<string, string> = { white: 'w', black: 'b' };
+
+/** Role to single-char code */
+const roleCode: Record<string, string> = {
+  pawn: 'p', knight: 'n', bishop: 'b', rook: 'r', queen: 'q', king: 'k'
+};
 
 /**
  * Check if a DOM node is a piece element.
  */
-function isPieceElement(el: PieceNode | SquareNode): el is PieceNode {
-  return el.tagName === 'PIECE';
+function isPieceElement(el: HTMLElement): el is PieceNode {
+  return el.classList.contains('cb-piece');
 }
 
 /**
  * Check if a DOM node is a square highlight element.
  */
-function isSquareElement(el: PieceNode | SquareNode): el is SquareNode {
-  return el.tagName === 'SQUARE';
+function isSquareElement(el: HTMLElement): el is SquareNode {
+  return el.classList.contains('cb-sq');
 }
 
 /**
- * Get a unique identifier for a piece (color + role).
+ * Get a unique identifier for a piece (color code + role code).
  */
 function getPieceIdentifier(piece: Piece): PieceIdentifier {
-  return `${piece.color} ${piece.role}`;
+  return `${colorCode[piece.color]}${roleCode[piece.role]}`;
 }
 
 /**
@@ -296,7 +304,7 @@ export function syncPiecesWithDom(state: State): void {
       setVisible(available, true);
     } else {
       // Create new element
-      const squareElement = createEl('square', className) as SquareNode;
+      const squareElement = createEl('div', 'cb-sq ' + className) as SquareNode;
       squareElement.cbKey = key;
       translate(squareElement, pixelPosition);
       boardElement.insertBefore(squareElement, boardElement.firstChild);
@@ -342,9 +350,12 @@ export function syncPiecesWithDom(state: State): void {
         translate(relocatable, posToPixel(coords, whiteBottom));
       } else {
         // Create new piece element
-        const pieceElement = createEl('piece', pieceId) as PieceNode;
+        const pieceElement = createEl('div', 'cb-piece') as PieceNode;
         const coords = key2pos(key);
 
+        // Set data attributes for piece identification
+        pieceElement.dataset.c = colorCode[piece.color];
+        pieceElement.dataset.r = roleCode[piece.role];
         pieceElement.cbPiece = pieceId;
         pieceElement.cbKey = key;
 

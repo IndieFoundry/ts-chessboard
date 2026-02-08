@@ -121,7 +121,7 @@ export interface KeyedNode extends HTMLElement {
 
 /** Piece DOM element */
 export interface PieceNode extends KeyedNode {
-  tagName: 'PIECE';
+  tagName: 'DIV';
   cbPiece: string;
   cbAnimating?: boolean;
   cbFading?: boolean;
@@ -131,7 +131,7 @@ export interface PieceNode extends KeyedNode {
 
 /** Square DOM element */
 export interface SquareNode extends KeyedNode {
-  tagName: 'SQUARE';
+  tagName: 'DIV';
 }
 
 /** Memoized function interface */

@@ -12,18 +12,18 @@ import { createElement as createSVG, setAttributes, createDefs } from './svg/sha
  * Renders the board DOM structure
  *
  * DOM hierarchy:
- * .chess-wrap (root element)
- *   chess-container
- *     chess-board
- *     svg.chess-shapes
+ * .cb-wrap (root element)
+ *   .cb-layer
+ *     .cb-grid
+ *     svg.cb-arrows
  *       defs
  *       g
- *     svg.chess-custom-svgs
+ *     svg.cb-markers
  *       g
- *     chess-auto-pieces
- *     coords.ranks
- *     coords.files
- *     piece.ghost
+ *     .cb-hints
+ *     .cb-labels.rows
+ *     .cb-labels.cols
+ *     .cb-phantom
  */
 export function renderWrap(element: HTMLElement, s: HeadlessState): Elements {
   // Clear all children safely
@@ -31,16 +31,16 @@ export function renderWrap(element: HTMLElement, s: HeadlessState): Elements {
     element.removeChild(element.firstChild);
   }
 
-  // ensure the chess-wrap class is set
-  element.classList.add('chess-wrap');
+  // ensure the cb-wrap class is set
+  element.classList.add('cb-wrap');
 
-  for (const c of colors) element.classList.toggle('orientation-' + c, s.orientation === c);
-  element.classList.toggle('manipulable', !s.viewOnly);
+  for (const c of colors) element.classList.toggle('view-' + c, s.orientation === c);
+  element.classList.toggle('interactive', !s.viewOnly);
 
-  const container = createEl('chess-container');
+  const container = createEl('div', 'cb-layer');
   element.appendChild(container);
 
-  const board = createEl('chess-board');
+  const board = createEl('div', 'cb-grid');
   container.appendChild(board);
 
   let shapesBelow: SVGElement | undefined;
@@ -50,10 +50,10 @@ export function renderWrap(element: HTMLElement, s: HeadlessState): Elements {
   let autoPieces: HTMLElement | undefined;
 
   if (s.drawable.visible) {
-    [shapesBelow, shapes] = ['chess-shapes-below', 'chess-shapes'].map(cls => svgContainer(cls, true));
-    [customBelow, custom] = ['chess-custom-below', 'chess-custom-svgs'].map(cls => svgContainer(cls, false));
+    [shapesBelow, shapes] = ['cb-arrows-below', 'cb-arrows'].map(cls => svgContainer(cls, true));
+    [customBelow, custom] = ['cb-markers-below', 'cb-markers'].map(cls => svgContainer(cls, false));
 
-    autoPieces = createEl('chess-auto-pieces');
+    autoPieces = createEl('div', 'cb-hints');
 
     container.appendChild(shapesBelow);
     container.appendChild(customBelow);
@@ -63,7 +63,7 @@ export function renderWrap(element: HTMLElement, s: HeadlessState): Elements {
   }
 
   if (s.coordinates) {
-    const orientClass = s.orientation === 'black' ? ' black' : '';
+    const orientClass = s.orientation === 'black' ? ' flip' : '';
     const ranksPositionClass = s.ranksPosition === 'left' ? ' left' : '';
 
     if (s.coordinatesOnSquares) {
@@ -72,7 +72,7 @@ export function renderWrap(element: HTMLElement, s: HeadlessState): Elements {
         container.appendChild(
           renderCoords(
             ranks.map(r => f + r),
-            'squares rank' + rankN(i) + orientClass + ranksPositionClass,
+            'cb-labels on-squares file' + rankN(i) + orientClass + ranksPositionClass,
             i % 2 === 0 ? 'black' : 'white',
           ),
         ),
@@ -81,17 +81,17 @@ export function renderWrap(element: HTMLElement, s: HeadlessState): Elements {
       container.appendChild(
         renderCoords(
           ranks,
-          'ranks' + orientClass + ranksPositionClass,
+          'cb-labels rows' + orientClass + ranksPositionClass,
           (s.ranksPosition === 'right') === (s.orientation === 'white') ? 'white' : 'black',
         ),
       );
-      container.appendChild(renderCoords(files, 'files' + orientClass, opposite(s.orientation)));
+      container.appendChild(renderCoords(files, 'cb-labels cols' + orientClass, opposite(s.orientation)));
     }
   }
 
   let ghost: HTMLElement | undefined;
   if (!s.viewOnly && s.draggable.enabled && s.draggable.showGhost) {
-    ghost = createEl('piece', 'ghost');
+    ghost = createEl('div', 'cb-phantom');
     setVisible(ghost, false);
     container.appendChild(ghost);
   }
@@ -111,11 +111,11 @@ function svgContainer(cls: string, isShapes: boolean) {
 }
 
 function renderCoords(elems: readonly string[], className: string, firstColor: Color): HTMLElement {
-  const el = createEl('coords', className);
+  const el = createEl('div', className);
   let f: HTMLElement;
   elems.forEach((elem, i) => {
     const light = i % 2 === (firstColor === 'white' ? 0 : 1);
-    f = createEl('coord', `coord-${light ? 'light' : 'dark'}`);
+    f = createEl('span', light ? 'lt' : 'dk');
     f.textContent = elem;
     el.appendChild(f);
   });

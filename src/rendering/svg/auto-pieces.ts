@@ -40,13 +40,20 @@ export function renderResized(state: State): void {
   }
 }
 
+/** Role to single-char code */
+const roleCode: Record<string, string> = {
+  pawn: 'p', knight: 'n', bishop: 'b', rook: 'r', queen: 'q', king: 'k'
+};
+
 function renderShape(state: State, { shape, hash }: SyncableShape, bounds: DOMRectReadOnly): PieceNode {
   const orig = shape.orig;
   const role = shape.piece?.role;
   const color = shape.piece?.color;
   const scale = shape.piece?.scale;
 
-  const pieceEl = createEl('piece', `${role} ${color}`) as PieceNode;
+  const pieceEl = createEl('div', 'cb-piece') as PieceNode;
+  pieceEl.dataset.c = color === 'white' ? 'w' : 'b';
+  pieceEl.dataset.r = role ? roleCode[role] : '';
   pieceEl.setAttribute('cbHash', hash);
   pieceEl.cbKey = orig;
   pieceEl.cbScale = scale;

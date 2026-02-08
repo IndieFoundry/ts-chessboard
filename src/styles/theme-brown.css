@@ -1,105 +1,52 @@
 /**
  * Default brown theme with CSS custom properties for easy customization.
- *
- * Override these variables to customize the board appearance:
- *
- * .my-board {
- *   --chess-board-light: #eeeed2;
- *   --chess-board-dark: #769656;
- *   --chess-highlight-last-move: rgba(255, 255, 0, 0.4);
- *   --chess-highlight-selected: rgba(0, 100, 0, 0.5);
- * }
  */
 
-/** Board square colors - uses embedded SVG for crisp checkerboard pattern */
-chess-board {
-  background-color: var(--chess-board-light, #f0d9b5);
-  background-image: var(--chess-board-pattern, url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4IDgiIHNoYXBlLXJlbmRlcmluZz0iY3Jpc3BFZGdlcyI+PHJlY3QgZmlsbD0iI2I1ODg2MyIgeD0iMCIgeT0iMCIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPjxyZWN0IGZpbGw9IiNiNTg4NjMiIHg9IjIiIHk9IjAiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz48cmVjdCBmaWxsPSIjYjU4ODYzIiB4PSI0IiB5PSIwIiB3aWR0aD0iMSIgaGVpZ2h0PSIxIi8+PHJlY3QgZmlsbD0iI2I1ODg2MyIgeD0iNiIgeT0iMCIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPjxyZWN0IGZpbGw9IiNiNTg4NjMiIHg9IjEiIHk9IjEiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz48cmVjdCBmaWxsPSIjYjU4ODYzIiB4PSIzIiB5PSIxIiB3aWR0aD0iMSIgaGVpZ2h0PSIxIi8+PHJlY3QgZmlsbD0iI2I1ODg2MyIgeD0iNSIgeT0iMSIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPjxyZWN0IGZpbGw9IiNiNTg4NjMiIHg9IjciIHk9IjEiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz48cmVjdCBmaWxsPSIjYjU4ODYzIiB4PSIwIiB5PSIyIiB3aWR0aD0iMSIgaGVpZ2h0PSIxIi8+PHJlY3QgZmlsbD0iI2I1ODg2MyIgeD0iMiIgeT0iMiIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPjxyZWN0IGZpbGw9IiNiNTg4NjMiIHg9IjQiIHk9IjIiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz48cmVjdCBmaWxsPSIjYjU4ODYzIiB4PSI2IiB5PSIyIiB3aWR0aD0iMSIgaGVpZ2h0PSIxIi8+PHJlY3QgZmlsbD0iI2I1ODg2MyIgeD0iMSIgeT0iMyIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPjxyZWN0IGZpbGw9IiNiNTg4NjMiIHg9IjMiIHk9IjMiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz48cmVjdCBmaWxsPSIjYjU4ODYzIiB4PSI1IiB5PSIzIiB3aWR0aD0iMSIgaGVpZ2h0PSIxIi8+PHJlY3QgZmlsbD0iI2I1ODg2MyIgeD0iNyIgeT0iMyIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPjxyZWN0IGZpbGw9IiNiNTg4NjMiIHg9IjAiIHk9IjQiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz48cmVjdCBmaWxsPSIjYjU4ODYzIiB4PSIyIiB5PSI0IiB3aWR0aD0iMSIgaGVpZ2h0PSIxIi8+PHJlY3QgZmlsbD0iI2I1ODg2MyIgeD0iNCIgeT0iNCIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPjxyZWN0IGZpbGw9IiNiNTg4NjMiIHg9IjYiIHk9IjQiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz48cmVjdCBmaWxsPSIjYjU4ODYzIiB4PSIxIiB5PSI1IiB3aWR0aD0iMSIgaGVpZ2h0PSIxIi8+PHJlY3QgZmlsbD0iI2I1ODg2MyIgeD0iMyIgeT0iNSIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPjxyZWN0IGZpbGw9IiNiNTg4NjMiIHg9IjUiIHk9IjUiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz48cmVjdCBmaWxsPSIjYjU4ODYzIiB4PSI3IiB5PSI1IiB3aWR0aD0iMSIgaGVpZ2h0PSIxIi8+PHJlY3QgZmlsbD0iI2I1ODg2MyIgeD0iMCIgeT0iNiIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPjxyZWN0IGZpbGw9IiNiNTg4NjMiIHg9IjIiIHk9IjYiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz48cmVjdCBmaWxsPSIjYjU4ODYzIiB4PSI0IiB5PSI2IiB3aWR0aD0iMSIgaGVpZ2h0PSIxIi8+PHJlY3QgZmlsbD0iI2I1ODg2MyIgeD0iNiIgeT0iNiIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPjxyZWN0IGZpbGw9IiNiNTg4NjMiIHg9IjEiIHk9IjciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz48cmVjdCBmaWxsPSIjYjU4ODYzIiB4PSIzIiB5PSI3IiB3aWR0aD0iMSIgaGVpZ2h0PSIxIi8+PHJlY3QgZmlsbD0iI2I1ODg2MyIgeD0iNSIgeT0iNyIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPjxyZWN0IGZpbGw9IiNiNTg4NjMiIHg9IjciIHk9IjciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz48L3N2Zz4='));
+/** Board square colors */
+.cb-grid {
+  background-color: var(--cb-light, #f0d9b5);
+  background-image: var(--cb-pattern, url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4IDgiIHNoYXBlLXJlbmRlcmluZz0iY3Jpc3BFZGdlcyI+PHJlY3QgZmlsbD0iI2I1ODg2MyIgeD0iMCIgeT0iMCIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPjxyZWN0IGZpbGw9IiNiNTg4NjMiIHg9IjIiIHk9IjAiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz48cmVjdCBmaWxsPSIjYjU4ODYzIiB4PSI0IiB5PSIwIiB3aWR0aD0iMSIgaGVpZ2h0PSIxIi8+PHJlY3QgZmlsbD0iI2I1ODg2MyIgeD0iNiIgeT0iMCIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPjxyZWN0IGZpbGw9IiNiNTg4NjMiIHg9IjEiIHk9IjEiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz48cmVjdCBmaWxsPSIjYjU4ODYzIiB4PSIzIiB5PSIxIiB3aWR0aD0iMSIgaGVpZ2h0PSIxIi8+PHJlY3QgZmlsbD0iI2I1ODg2MyIgeD0iNSIgeT0iMSIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPjxyZWN0IGZpbGw9IiNiNTg4NjMiIHg9IjciIHk9IjEiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz48cmVjdCBmaWxsPSIjYjU4ODYzIiB4PSIwIiB5PSIyIiB3aWR0aD0iMSIgaGVpZ2h0PSIxIi8+PHJlY3QgZmlsbD0iI2I1ODg2MyIgeD0iMiIgeT0iMiIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPjxyZWN0IGZpbGw9IiNiNTg4NjMiIHg9IjQiIHk9IjIiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz48cmVjdCBmaWxsPSIjYjU4ODYzIiB4PSI2IiB5PSIyIiB3aWR0aD0iMSIgaGVpZ2h0PSIxIi8+PHJlY3QgZmlsbD0iI2I1ODg2MyIgeD0iMSIgeT0iMyIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPjxyZWN0IGZpbGw9IiNiNTg4NjMiIHg9IjMiIHk9IjMiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz48cmVjdCBmaWxsPSIjYjU4ODYzIiB4PSI1IiB5PSIzIiB3aWR0aD0iMSIgaGVpZ2h0PSIxIi8+PHJlY3QgZmlsbD0iI2I1ODg2MyIgeD0iNyIgeT0iMyIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPjxyZWN0IGZpbGw9IiNiNTg4NjMiIHg9IjAiIHk9IjQiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz48cmVjdCBmaWxsPSIjYjU4ODYzIiB4PSIyIiB5PSI0IiB3aWR0aD0iMSIgaGVpZ2h0PSIxIi8+PHJlY3QgZmlsbD0iI2I1ODg2MyIgeD0iNCIgeT0iNCIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPjxyZWN0IGZpbGw9IiNiNTg4NjMiIHg9IjYiIHk9IjQiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz48cmVjdCBmaWxsPSIjYjU4ODYzIiB4PSIxIiB5PSI1IiB3aWR0aD0iMSIgaGVpZ2h0PSIxIi8+PHJlY3QgZmlsbD0iI2I1ODg2MyIgeD0iMyIgeT0iNSIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPjxyZWN0IGZpbGw9IiNiNTg4NjMiIHg9IjUiIHk9IjUiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz48cmVjdCBmaWxsPSIjYjU4ODYzIiB4PSI3IiB5PSI1IiB3aWR0aD0iMSIgaGVpZ2h0PSIxIi8+PHJlY3QgZmlsbD0iI2I1ODg2MyIgeD0iMCIgeT0iNiIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPjxyZWN0IGZpbGw9IiNiNTg4NjMiIHg9IjIiIHk9IjYiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz48cmVjdCBmaWxsPSIjYjU4ODYzIiB4PSI0IiB5PSI2IiB3aWR0aD0iMSIgaGVpZ2h0PSIxIi8+PHJlY3QgZmlsbD0iI2I1ODg2MyIgeD0iNiIgeT0iNiIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPjxyZWN0IGZpbGw9IiNiNTg4NjMiIHg9IjEiIHk9IjciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz48cmVjdCBmaWxsPSIjYjU4ODYzIiB4PSIzIiB5PSI3IiB3aWR0aD0iMSIgaGVpZ2h0PSIxIi8+PHJlY3QgZmlsbD0iI2I1ODg2MyIgeD0iNSIgeT0iNyIgd2lkdGg9IjEiIGhlaWdodD0iMSIvPjxyZWN0IGZpbGw9IiNiNTg4NjMiIHg9IjciIHk9IjciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiLz48L3N2Zz4='));
 }
 
-/** Move destination dots */
-chess-board square.move-dest {
-  background: var(
-    --chess-move-dest,
-    radial-gradient(rgba(20, 85, 30, 0.5) 22%, transparent 22%)
-  );
+.cb-grid .cb-sq.move-dest {
+  background: radial-gradient(rgba(20, 85, 30, 0.5) 22%, transparent 22%);
 }
 
-chess-board square.premove-dest {
-  background: var(
-    --chess-premove-dest,
-    radial-gradient(rgba(20, 30, 85, 0.5) 22%, transparent 22%)
-  );
+.cb-grid .cb-sq.premove-dest {
+  background: radial-gradient(rgba(20, 30, 85, 0.5) 22%, transparent 22%);
 }
 
-/** Move destination on occupied squares (ring around piece) */
-chess-board square.oc.move-dest {
-  background: var(
-    --chess-move-dest-occupied,
-    radial-gradient(transparent 0%, transparent 80%, rgba(20, 85, 0, 0.3) 80%)
-  );
+.cb-grid .cb-sq.oc.move-dest {
+  background: radial-gradient(transparent 0%, transparent 80%, rgba(20, 85, 0, 0.3) 80%);
 }
 
-chess-board square.oc.premove-dest {
-  background: var(
-    --chess-premove-dest-occupied,
-    radial-gradient(transparent 0%, transparent 80%, rgba(20, 30, 85, 0.2) 80%)
-  );
+.cb-grid .cb-sq.oc.premove-dest {
+  background: radial-gradient(transparent 0%, transparent 80%, rgba(20, 30, 85, 0.2) 80%);
 }
 
-/** Hover states */
-chess-board square.move-dest:hover {
-  background: var(--chess-move-dest-hover, rgba(20, 85, 30, 0.3));
+.cb-grid .cb-sq.move-dest:hover {
+  background: rgba(20, 85, 30, 0.3);
 }
 
-chess-board square.premove-dest:hover {
-  background: var(--chess-premove-dest-hover, rgba(20, 30, 85, 0.2));
+.cb-grid .cb-sq.premove-dest:hover {
+  background: rgba(20, 30, 85, 0.2);
 }
 
-/** Last move highlight */
-chess-board square.last-move {
-  background-color: var(--chess-highlight-last-move, rgba(155, 199, 0, 0.41));
+.cb-grid .cb-sq.last-move {
+  background-color: rgba(155, 199, 0, 0.41);
 }
 
-/** Selected square highlight */
-chess-board square.selected {
-  background-color: var(--chess-highlight-selected, rgba(20, 85, 30, 0.5));
+.cb-grid .cb-sq.selected {
+  background-color: rgba(20, 85, 30, 0.5);
 }
 
-/** Check highlight */
-chess-board square.check {
-  background: var(
-    --chess-highlight-check,
-    radial-gradient(
-      ellipse at center,
-      rgba(255, 0, 0, 1) 0%,
-      rgba(231, 0, 0, 1) 25%,
-      rgba(169, 0, 0, 0) 89%,
-      rgba(158, 0, 0, 0) 100%
-    )
-  );
+.cb-grid .cb-sq.check {
+  background: radial-gradient(ellipse at center, rgba(255, 0, 0, 1) 0%, rgba(231, 0, 0, 1) 25%, rgba(169, 0, 0, 0) 89%, rgba(158, 0, 0, 0) 100%);
 }
 
-/** Current premove highlight */
-chess-board square.current-premove {
-  background-color: var(--chess-highlight-premove, rgba(20, 30, 85, 0.5));
+.cb-grid .cb-sq.current-premove {
+  background-color: rgba(20, 30, 85, 0.5);
 }
 
-/** Coordinate label colors (alternating light/dark) */
-.orientation-white .ranks :nth-child(odd),
-.orientation-white .files :nth-child(even),
-.orientation-black .ranks :nth-child(even),
-.orientation-black .files :nth-child(odd),
-coords.squares:nth-of-type(odd) :nth-child(even),
-coords.squares:nth-of-type(even) :nth-child(odd) {
-  color: var(--chess-coord-color-dark, rgba(72, 72, 72, 0.8));
-}
-
-.orientation-white .ranks :nth-child(even),
-.orientation-white .files :nth-child(odd),
-.orientation-black .ranks :nth-child(odd),
-.orientation-black .files :nth-child(even),
-coords.squares:nth-of-type(odd) :nth-child(odd),
-coords.squares:nth-of-type(even) :nth-child(even) {
-  color: var(--chess-coord-color-light, rgba(255, 255, 255, 0.8));
-}
+.cb-labels.lt { color: rgba(255, 255, 255, 0.8); }
+.cb-labels.dk { color: rgba(72, 72, 72, 0.8); }

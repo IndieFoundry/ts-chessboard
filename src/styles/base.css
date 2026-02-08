@@ -1,10 +1,10 @@
-.chess-wrap {
+.cb-wrap {
   box-sizing: content-box;
   position: relative;
   display: block;
 }
 
-chess-container {
+.cb-layer {
   position: absolute;
   width: 100%;
   height: 100%;
@@ -12,7 +12,7 @@ chess-container {
   top: 0;
 }
 
-chess-board {
+.cb-grid {
   position: absolute;
   top: 0;
   left: 0;
@@ -26,11 +26,11 @@ chess-board {
   background-size: cover;
 }
 
-.chess-wrap.manipulable chess-board {
+.cb-wrap.interactive .cb-grid {
   cursor: pointer;
 }
 
-chess-board square {
+.cb-grid .cb-sq {
   position: absolute;
   top: 0;
   left: 0;
@@ -39,15 +39,15 @@ chess-board square {
   pointer-events: none;
 }
 
-chess-board square.move-dest {
+.cb-grid .cb-sq.move-dest {
   pointer-events: auto;
 }
 
-chess-board square.last-move {
+.cb-grid .cb-sq.last-move {
   will-change: transform;
 }
 
-.chess-wrap piece {
+.cb-wrap .cb-piece {
   position: absolute;
   top: 0;
   left: 0;
@@ -59,26 +59,35 @@ chess-board square.last-move {
   pointer-events: none;
 }
 
-chess-board piece.dragging {
+.cb-grid .cb-piece.dragging {
   cursor: move;
   /* !important to override z-index from 3D piece inline style */
   z-index: 11 !important;
 }
 
-piece.anim {
+.cb-piece.anim {
   z-index: 8;
 }
 
-piece.fading {
+.cb-piece.fading {
   z-index: 1;
   opacity: 0.5;
 }
 
-.chess-wrap piece.ghost {
+.cb-wrap .cb-phantom {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 12.5%;
+  height: 12.5%;
+  background-size: cover;
   opacity: 0.3;
+  z-index: 1;
+  will-change: transform;
+  pointer-events: none;
 }
 
-.chess-wrap piece svg {
+.cb-wrap .cb-piece svg {
   overflow: hidden;
   position: relative;
   top: 0px;
@@ -90,11 +99,11 @@ piece.fading {
   opacity: 0.6;
 }
 
-.chess-wrap chess-auto-pieces,
-.chess-wrap .chess-shapes,
-.chess-wrap .chess-custom-svgs,
-.chess-wrap .chess-shapes-below,
-.chess-wrap .chess-custom-below {
+.cb-wrap .cb-hints,
+.cb-wrap .cb-arrows,
+.cb-wrap .cb-markers,
+.cb-wrap .cb-arrows-below,
+.cb-wrap .cb-markers-below {
   overflow: visible;
   position: absolute;
   top: 0px;
@@ -104,40 +113,40 @@ piece.fading {
   pointer-events: none;
 }
 
-.chess-wrap chess-auto-pieces {
+.cb-wrap .cb-hints {
   z-index: 2;
 }
 
-.chess-wrap chess-auto-pieces piece {
+.cb-wrap .cb-hints .cb-piece {
   opacity: 0.3;
 }
 
-.chess-wrap .chess-shapes {
+.cb-wrap .cb-arrows {
   overflow: hidden;
   opacity: 0.6;
   z-index: 2;
 }
 
-.chess-wrap .chess-shapes-below {
+.cb-wrap .cb-arrows-below {
   overflow: hidden;
   z-index: 1;
 }
 
-.chess-wrap .chess-custom-below {
+.cb-wrap .cb-markers-below {
   z-index: 1;
 }
 
-.chess-wrap .chess-custom-svgs {
+.cb-wrap .cb-markers {
   /* over piece.anim = 8, but under piece.dragging = 11 */
   z-index: 9;
 }
 
-.chess-wrap .chess-custom-svgs svg,
-.chess-wrap .chess-custom-below svg {
+.cb-wrap .cb-markers svg,
+.cb-wrap .cb-markers-below svg {
   overflow: visible;
 }
 
-.chess-wrap coords {
+.cb-wrap .cb-labels {
   position: absolute;
   display: flex;
   pointer-events: none;
@@ -146,7 +155,7 @@ piece.fading {
   font-size: 9px;
 }
 
-.chess-wrap coords.ranks {
+.cb-wrap .cb-labels.rows {
   left: 4px;
   top: -20px;
   flex-flow: column-reverse;
@@ -154,16 +163,16 @@ piece.fading {
   width: 12px;
 }
 
-.chess-wrap coords.ranks.black {
+.cb-wrap .cb-labels.rows.flip {
   flex-flow: column;
 }
 
-.chess-wrap coords.ranks.left {
+.cb-wrap .cb-labels.rows.left {
   left: -15px;
   align-items: flex-end;
 }
 
-.chess-wrap coords.files {
+.cb-wrap .cb-labels.cols {
   bottom: -4px;
   left: 24px;
   flex-flow: row;
@@ -173,19 +182,19 @@ piece.fading {
   text-align: center;
 }
 
-.chess-wrap coords.files.black {
+.cb-wrap .cb-labels.cols.flip {
   flex-flow: row-reverse;
 }
 
-.chess-wrap coords coord {
+.cb-wrap .cb-labels span {
   flex: 1 1 auto;
 }
 
-.chess-wrap coords.ranks coord {
+.cb-wrap .cb-labels.rows span {
   transform: translateY(39%);
 }
 
-.chess-wrap coords.squares {
+.cb-wrap .cb-labels.on-squares {
   bottom: 0;
   left: 0;
   text-transform: uppercase;
@@ -195,42 +204,42 @@ piece.fading {
   width: 12.5%;
 }
 
-.chess-wrap coords.squares.black {
+.cb-wrap .cb-labels.on-squares.flip {
   flex-flow: column;
 }
 
-.chess-wrap coords.squares.left {
+.cb-wrap .cb-labels.on-squares.left {
   text-align: left;
 }
 
-.chess-wrap coords.squares coord {
+.cb-wrap .cb-labels.on-squares span {
   padding: 6% 4%;
 }
 
-.chess-wrap coords.squares.rank2 {
+.cb-wrap .cb-labels.on-squares.file2 {
   transform: translateX(100%);
 }
 
-.chess-wrap coords.squares.rank3 {
+.cb-wrap .cb-labels.on-squares.file3 {
   transform: translateX(200%);
 }
 
-.chess-wrap coords.squares.rank4 {
+.cb-wrap .cb-labels.on-squares.file4 {
   transform: translateX(300%);
 }
 
-.chess-wrap coords.squares.rank5 {
+.cb-wrap .cb-labels.on-squares.file5 {
   transform: translateX(400%);
 }
 
-.chess-wrap coords.squares.rank6 {
+.cb-wrap .cb-labels.on-squares.file6 {
   transform: translateX(500%);
 }
 
-.chess-wrap coords.squares.rank7 {
+.cb-wrap .cb-labels.on-squares.file7 {
   transform: translateX(600%);
 }
 
-.chess-wrap coords.squares.rank8 {
+.cb-wrap .cb-labels.on-squares.file8 {
   transform: translateX(700%);
 }
