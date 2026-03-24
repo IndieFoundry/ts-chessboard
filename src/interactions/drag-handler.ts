@@ -33,6 +33,25 @@ export function start(s: State, e: MouchEvent): void {
   if (e.buttons !== undefined && e.buttons > 1) return;
   if (e.touches && e.touches.length > 1) return;
 
+  // DEBUG
+  {
+    const _b = s.dom.bounds();
+    const _p = eventPosition(e);
+    const _k = _p ? moves.getKeyAtDomPos(_p, moves.whitePov(s), _b) : null;
+    const _pc = _k ? s.pieces.get(_k) : null;
+    console.log('%c[DRAG START]', 'color: #00ffff; font-weight: bold', {
+      key: _k,
+      piece: _pc ? `${_pc.color} ${_pc.role}` : null,
+      turnColor: s.turnColor,
+      movableColor: s.movable.color,
+      destsCount: s.movable.dests?.size ?? 'undefined',
+      draggableEnabled: s.draggable.enabled,
+      premovableEnabled: s.premovable.enabled,
+      canDrag: _pc ? moves.isDraggable(s, _k!) : false,
+      viewOnly: s.viewOnly,
+    });
+  }
+
   const bounds = s.dom.bounds(),
     position = eventPosition(e)!,
     orig = moves.getKeyAtDomPos(position, moves.whitePov(s), bounds);
@@ -67,6 +86,20 @@ export function start(s: State, e: MouchEvent): void {
 
   const stillSelected = s.selected === orig;
   const element = pieceElementByKey(s, orig);
+
+  // DEBUG: log the actual drag decision
+  if (piece) {
+    console.log('%c[DRAG DECISION]', 'color: #ff6600; font-weight: bold', {
+      orig,
+      hasPiece: !!piece,
+      hasElement: !!element,
+      stillSelected,
+      isDraggable: moves.isDraggable(s, orig),
+      hadPremove,
+      hadPredrop,
+      selected: s.selected,
+    });
+  }
 
   if (piece && element && stillSelected && moves.isDraggable(s, orig)) {
     s.draggable.current = {
