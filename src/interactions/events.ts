@@ -23,8 +23,10 @@ export function bindBoard(s: State, onResize: () => void): void {
     boardEl.addEventListener('contextmenu', e => e.preventDefault());
   }
 
-  if (s.viewOnly) return;
-
+  // Always bind drag/draw events, even if currently viewOnly.
+  // The handlers check s.viewOnly at runtime (line 78), so they'll no-op when viewOnly is true.
+  // This fixes a bug where the board starts as viewOnly (e.g., opponent moves first in training)
+  // and becomes interactive later — without this, events would never be bound.
   const onStart = startDragOrDraw(s);
   boardEl.addEventListener('touchstart', onStart as EventListener, {
     passive: false,
@@ -42,18 +44,17 @@ export function bindDocument(s: State, onResize: () => void): Unbind {
 
   if (!('ResizeObserver' in window)) unbinds.push(unbindable(document.body, 'board.resize', onResize));
 
-  if (!s.viewOnly) {
-    const onmove = dragOrDraw(s, drag.move, draw.move);
-    const onend = dragOrDraw(s, drag.end, draw.end);
+  // Always bind document events (handlers check s.viewOnly at runtime)
+  const onmove = dragOrDraw(s, drag.move, draw.move);
+  const onend = dragOrDraw(s, drag.end, draw.end);
 
-    for (const ev of ['touchmove', 'mousemove'])
-      unbinds.push(unbindable(document, ev, onmove as EventListener));
-    for (const ev of ['touchend', 'mouseup']) unbinds.push(unbindable(document, ev, onend as EventListener));
+  for (const ev of ['touchmove', 'mousemove'])
+    unbinds.push(unbindable(document, ev, onmove as EventListener));
+  for (const ev of ['touchend', 'mouseup']) unbinds.push(unbindable(document, ev, onend as EventListener));
 
-    const onScroll = () => s.dom.bounds.clear();
-    unbinds.push(unbindable(document, 'scroll', onScroll, { capture: true, passive: true }));
-    unbinds.push(unbindable(window, 'resize', onScroll, { passive: true }));
-  }
+  const onScroll = () => s.dom.bounds.clear();
+  unbinds.push(unbindable(document, 'scroll', onScroll, { capture: true, passive: true }));
+  unbinds.push(unbindable(window, 'resize', onScroll, { passive: true }));
 
   return () => unbinds.forEach(f => f());
 }
