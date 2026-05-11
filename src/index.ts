@@ -17,4 +17,6 @@ export type { DrawShape, DrawBrush, DrawBrushes, DrawModifiers, DrawShapePiece }
 // CSS imports
 import './styles/base.css';
 import './styles/theme-brown.css';
+import './styles/themes-extra.css';
 import './styles/pieces-staunty.css';
+import './styles/pieces-cburnett.css';
