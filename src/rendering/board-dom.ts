@@ -93,7 +93,12 @@ export function renderWrap(element: HTMLElement, s: HeadlessState): Elements {
   if (!s.viewOnly && s.draggable.enabled && s.draggable.showGhost) {
     ghost = createEl('div', 'cb-phantom');
     setVisible(ghost, false);
-    container.appendChild(ghost);
+    // Append INSIDE .cb-grid (board), not .cb-layer (container): the phantom's
+    // orientation-flip CSS is scoped `.cb-grid[data-orientation="black"]
+    // .cb-phantom{...}`, so a ghost that is a sibling of .cb-grid never gets
+    // flipped and renders at the 180°-mirrored square on a black-oriented
+    // board (e.g. b8 shows at g1). As a child of .cb-grid the rules match.
+    board.appendChild(ghost);
   }
 
   return { board, container, wrap: element, ghost, shapes, shapesBelow, custom, customBelow, autoPieces };
