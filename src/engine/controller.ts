@@ -80,8 +80,13 @@ function debounceRedraw(redrawNow: (skipSvg?: boolean) => void): () => void {
     if (redrawing) return;
     redrawing = true;
     requestAnimationFrame(() => {
-      redrawNow();
-      redrawing = false;
+      // finally: a throwing render must not leave the flag stuck, or every
+      // future redraw silently no-ops and the board freezes for good.
+      try {
+        redrawNow();
+      } finally {
+        redrawing = false;
+      }
     });
   };
 }

@@ -132,6 +132,10 @@ export interface PieceNode extends KeyedNode {
 /** Square DOM element */
 export interface SquareNode extends KeyedNode {
   tagName: 'DIV';
+  /** Logical highlight class ("last-move", "selected", ...) without the
+      cb-sq base class or the hidden visibility class, so renders can match
+      and reuse square elements no matter what classList mutations added. */
+  cbSquareClass: string;
 }
 
 /** Memoized function interface */

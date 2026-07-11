@@ -37,6 +37,17 @@ function isSquareElement(el: HTMLElement): el is SquareNode {
 }
 
 /**
+ * Recover the logical highlight class from a square element's className
+ * (for elements created before cbSquareClass existed).
+ */
+function logicalSquareClass(className: string): string {
+  return className
+    .split(' ')
+    .filter(c => c && c !== 'cb-sq' && c !== 'hidden')
+    .join(' ');
+}
+
+/**
  * Get a unique identifier for a piece (color code + role code).
  */
 function getPieceIdentifier(piece: Piece): PieceIdentifier {
@@ -284,13 +295,17 @@ export function syncPiecesWithDom(state: State): void {
         pushToMap(relocatablePieces, elementPieceId, element);
       }
     } else if (isSquareElement(element)) {
-      // Handle square highlight elements
-      const className = element.className;
-      if (desiredHighlights.get(key) === className) {
+      // Handle square highlight elements. Compare on the LOGICAL class only:
+      // element.className also carries the cb-sq base class and the hidden
+      // visibility class, so comparing it against the desired highlight class
+      // can never match — every redraw would then orphan all existing square
+      // elements and create fresh ones, leaking DOM nodes without bound.
+      const squareClass = element.cbSquareClass ?? logicalSquareClass(element.className);
+      if (desiredHighlights.get(key) === squareClass) {
         setVisible(element, true);
         desiredHighlights.delete(key);
       } else {
-        pushToMap(availableSquareElements, className, element);
+        pushToMap(availableSquareElements, squareClass, element);
       }
     }
 
@@ -304,12 +319,14 @@ export function syncPiecesWithDom(state: State): void {
     if (available) {
       // Reuse existing element
       available.cbKey = key;
+      available.cbSquareClass = className;
       setPositionByKey(available, key);
       setVisible(available, true);
     } else {
       // Create new element
       const squareElement = createEl('div', 'cb-sq ' + className) as SquareNode;
       squareElement.cbKey = key;
+      squareElement.cbSquareClass = className;
       setPositionByKey(squareElement, key);
       boardElement.insertBefore(squareElement, boardElement.firstChild);
     }
