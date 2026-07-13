@@ -291,7 +291,7 @@
 
 .cb-layer .cb-labels.rows {
   left: 4px;
-  top: -20px;
+  top: 0;
   flex-flow: column-reverse;
   height: 100%;
   width: 12px;
@@ -308,7 +308,7 @@
 
 .cb-layer .cb-labels.cols {
   bottom: -4px;
-  left: 24px;
+  left: 0;
   flex-flow: row;
   width: 100%;
   height: 16px;
@@ -325,7 +325,10 @@
 }
 
 .cb-layer .cb-labels.rows span {
-  transform: translateY(39%);
+  /* True vertical centering per rank. Pixel nudges (top offsets, translateY
+     percentages) only line up at one board size and drift on small boards. */
+  display: flex;
+  align-items: center;
 }
 
 .cb-layer .cb-labels.on-squares {
