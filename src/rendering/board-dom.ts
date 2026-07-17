@@ -78,14 +78,22 @@ export function renderWrap(element: HTMLElement, s: HeadlessState): Elements {
         ),
       );
     } else {
+      // lt/dk must contrast the square under each label. Ranks sit on the
+      // rightmost column (h-file for white view, a-file for black view): the
+      // bottom-right corner square is always light, so the first rendered rank
+      // ('1', at the bottom for white / top for black via .flip) lands on a
+      // light square for white view and a dark one for black view. Files sit
+      // on the bottom rank, whose leftmost square is always dark: 'a' (first
+      // rendered, visually right for black via .flip) lands on dark for white
+      // view and light for black view.
       container.appendChild(
         renderCoords(
           ranks,
           'cb-labels rows' + orientClass + ranksPositionClass,
-          (s.ranksPosition === 'right') === (s.orientation === 'white') ? 'white' : 'black',
+          opposite(s.orientation),
         ),
       );
-      container.appendChild(renderCoords(files, 'cb-labels cols' + orientClass, opposite(s.orientation)));
+      container.appendChild(renderCoords(files, 'cb-labels cols' + orientClass, s.orientation));
     }
   }
 

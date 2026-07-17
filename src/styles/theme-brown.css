@@ -49,5 +49,7 @@
   background-color: rgba(20, 30, 85, 0.5);
 }
 
-.cb-labels.lt { color: rgba(255, 255, 255, 0.8); }
-.cb-labels.dk { color: rgba(72, 72, 72, 0.8); }
+/* lt/dk sit on the label spans (children of .cb-labels), matched per square
+   so each coordinate contrasts the square it sits on. */
+.cb-labels .lt { color: rgba(255, 255, 255, 0.8); }
+.cb-labels .dk { color: rgba(72, 72, 72, 0.8); }
