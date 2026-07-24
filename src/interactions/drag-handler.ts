@@ -4,8 +4,8 @@
 import type { State } from '../engine/state';
 import type { Key, Piece, NumberPair, MouchEvent, PieceNode } from '../core/types';
 import * as moves from '../core/moves';
-import { samePiece } from '../core/squares';
-import { eventPosition, translate, setVisible, setPositionByKey } from '../utils/dom';
+import { samePiece, key2pos } from '../core/squares';
+import { eventPosition, translate, setVisible, setPositionByKey, posToTranslate } from '../utils/dom';
 import { distanceSq } from '../utils/math';
 import { clear as drawClear } from './draw-handler';
 import { anim } from '../animation/animator';
@@ -82,6 +82,16 @@ export function start(s: State, e: MouchEvent): void {
     };
     element.cbDragging = true;
     element.classList.add('dragging');
+    // Adding `.dragging` drops the CSS rule that seats the piece on its square
+    // (.cb-piece:not(.dragging){transform:translate(--fx,--ry)}). The pointer-
+    // following transform is only written on the next animation frame in
+    // processDrag, and only once the drag has actually started - so a piece with
+    // no inline transform paints at the board's top-left corner (translate 0,0)
+    // for that gap, and for the whole press on a tap that never crosses the drag
+    // threshold. Seat it on its origin square synchronously now; processDrag
+    // overwrites this the moment the pointer moves, and the renderer clears the
+    // inline transform when the drag ends.
+    translate(element, posToTranslate(bounds)(key2pos(orig), moves.whitePov(s)));
 
     const ghost = s.dom.elements.ghost;
     if (ghost) {

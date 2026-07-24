@@ -152,6 +152,13 @@
   cursor: move;
   /* !important to override z-index from 3D piece inline style */
   z-index: 11 !important;
+  /* Fallback so a dragging piece never collapses to the board's top-left
+     corner: data-file/rank stay on the origin square through a drag, so this
+     re-asserts the same square transform the :not(.dragging) rule would give.
+     The drag's own inline `transform` is a style attribute and still wins, so
+     pointer-follow is unaffected; this only shows through in the frame(s)
+     before an inline transform is written (see drag-handler start()). */
+  transform: translate(calc(var(--fx) * 100%), calc(var(--ry) * 100%));
 }
 
 .cb-piece.anim {
