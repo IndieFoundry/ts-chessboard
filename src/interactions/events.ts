@@ -72,6 +72,17 @@ function unbindable(
 const startDragOrDraw =
   (s: State): MouchBind =>
   e => {
+    // Re-measure before mapping this pointer to a square. The board rect is
+    // memoized and only invalidated by scroll and by a resize of the wrap, so
+    // a board that MOVED without either - chrome above it appearing or
+    // disappearing, a panel collapsing, an accordion opening - kept mapping
+    // pointers to where it used to be. Every click then landed on the wrong
+    // square, or on none at all, with nothing in the console: the board
+    // simply read as dead. One getBoundingClientRect per gesture is cheap
+    // (the fresh value still serves the whole drag, and mid-gesture scrolling
+    // clears it again), and it is the only moment where being wrong costs the
+    // user their move.
+    s.dom.bounds.clear();
     if (s.draggable.current) drag.cancel(s);
     else if (s.drawable.current) draw.cancel(s);
     else if (e.shiftKey || isRightButton(e)) {
