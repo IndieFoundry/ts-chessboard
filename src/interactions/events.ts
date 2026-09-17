@@ -90,8 +90,17 @@ const startDragOrDraw =
     } else if (!s.viewOnly) {
       if (s.dropmode.active) drop(s, e);
       else drag.start(s, e);
+    } else if (s.drawable.enabled && s.drawable.eraseOnClick && !isIgnoredPointer(s, e)) {
+      // drag.start is where a playable board erases; a view-only one never gets there.
+      draw.clear(s);
     }
   };
+
+// Same filter drag.start applies before it erases.
+const isIgnoredPointer = (s: State, e: MouchEvent): boolean =>
+  !(s.trustAllEvents || e.isTrusted) ||
+  (e.buttons !== undefined && e.buttons > 1) ||
+  (!!e.touches && e.touches.length > 1);
 
 const dragOrDraw =
   (s: State, withDrag: StateMouchBind, withDraw: StateMouchBind): MouchBind =>

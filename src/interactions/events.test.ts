@@ -129,3 +129,47 @@ describe('pointer-down bounds freshness', () => {
     expect(measured).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('left click on a view-only board', () => {
+  // A finished drill or a replayed game is view-only, and the left click never
+  // reached drag start - the only place shapes were erased - so scratch arrows
+  // and circles could no longer be cleared by clicking the board.
+  const shape = { orig: 'd4' as Key, brush: 'green' };
+
+  function viewOnly(eraseOnClick?: boolean) {
+    const board = setup('e2');
+    board.s.viewOnly = true;
+    board.s.drawable.enabled = true;
+    board.s.drawable.shapes = [shape];
+    board.s.drawable.onChange = vi.fn();
+    if (eraseOnClick !== undefined) board.s.drawable.eraseOnClick = eraseOnClick;
+    return board;
+  }
+
+  it('erases the shapes, like on a playable board', () => {
+    const { s, mousedown } = viewOnly();
+    mousedown(450, 450);
+    expect(s.drawable.shapes).toEqual([]);
+    expect(s.drawable.onChange).toHaveBeenCalledWith([]);
+  });
+
+  it('keeps them with eraseOnClick: false', () => {
+    const { s, mousedown } = viewOnly(false);
+    mousedown(450, 450);
+    expect(s.drawable.shapes).toEqual([shape]);
+    expect(s.drawable.onChange).not.toHaveBeenCalled();
+  });
+
+  it('keeps them when drawing is disabled', () => {
+    const { s, mousedown } = viewOnly();
+    s.drawable.enabled = false;
+    mousedown(450, 450);
+    expect(s.drawable.shapes).toEqual([shape]);
+  });
+
+  it('still selects nothing', () => {
+    const { s, mousedown } = viewOnly();
+    mousedown(450, 650);
+    expect(s.selected).toBeUndefined();
+  });
+});
