@@ -87,7 +87,7 @@ function setup(orig: Key) {
   } as unknown as State['dom'];
 
   bindBoard(s, () => {});
-  return { s, node, live, measured, mousedown: (x: number, y: number) =>
+  return { s, node, live, measured, onStart: onStart!, mousedown: (x: number, y: number) =>
     onStart!({
       clientX: x, clientY: y, isTrusted: false, buttons: 0,
       touches: undefined, cancelable: true, ctrlKey: false,
@@ -164,6 +164,21 @@ describe('left click on a view-only board', () => {
     const { s, mousedown } = viewOnly();
     s.drawable.enabled = false;
     mousedown(450, 450);
+    expect(s.drawable.shapes).toEqual([shape]);
+  });
+
+  it.each([
+    ['an untrusted event', { isTrusted: false }, false],
+    ['a press with more than one button', { buttons: 3 }, true],
+    ['a multi-touch press', { touches: [{}, {}] }, true],
+  ])('ignores %s, like drag start does', (_label, patch, trustAll) => {
+    const { s, onStart } = viewOnly();
+    s.trustAllEvents = trustAll;
+    onStart({
+      clientX: 450, clientY: 450, isTrusted: false, buttons: 0,
+      touches: undefined, cancelable: true, ctrlKey: false,
+      preventDefault: () => {}, ...patch,
+    } as unknown as MouchEvent);
     expect(s.drawable.shapes).toEqual([shape]);
   });
 
