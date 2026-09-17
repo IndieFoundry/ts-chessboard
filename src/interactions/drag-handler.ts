@@ -44,6 +44,7 @@ export function start(s: State, e: MouchEvent): void {
   if (
     !previouslySelected &&
     s.drawable.enabled &&
+    s.drawable.eraseOnClick &&
     (s.drawable.eraseOnMovablePieceClick || !piece || piece.color !== s.turnColor)
   )
     drawClear(s);

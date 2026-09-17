@@ -53,6 +53,7 @@ export interface Drawable {
   enabled: boolean;
   visible: boolean;
   defaultSnapToValidMove: boolean;
+  eraseOnClick: boolean;
   eraseOnMovablePieceClick: boolean;
   onChange?: (shapes: DrawShape[]) => void;
   shapes: DrawShape[];

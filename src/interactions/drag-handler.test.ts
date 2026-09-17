@@ -118,3 +118,40 @@ describe('drag start positioning', () => {
     expect(node.style.transform).toBe('translate(400px,600px)');
   });
 });
+
+describe('erase on click', () => {
+  // A host that persists the user's shapes (a study/repertoire editor) must be
+  // able to keep them across the clicks that play the next move.
+  const shape = { orig: 'd4' as Key, brush: 'green' };
+
+  function drawingState(eraseOnClick?: boolean) {
+    rafQueue = [];
+    const node = makePieceNode('e2');
+    const s = makeState(node, 'e2');
+    s.drawable.enabled = true;
+    s.drawable.shapes = [shape];
+    s.drawable.onChange = vi.fn();
+    if (eraseOnClick !== undefined) s.drawable.eraseOnClick = eraseOnClick;
+    return { s, node };
+  }
+
+  it.each([
+    ['a movable piece', 450, 650],
+    ['an empty square', 450, 450],
+  ])('clears the shapes on a click on %s by default', (_label, x, y) => {
+    const { s, node } = drawingState();
+    start(s, pointerDownAt(x, y, node));
+    expect(s.drawable.shapes).toEqual([]);
+    expect(s.drawable.onChange).toHaveBeenCalledWith([]);
+  });
+
+  it.each([
+    ['a movable piece', 450, 650],
+    ['an empty square', 450, 450],
+  ])('keeps the shapes on a click on %s with eraseOnClick: false', (_label, x, y) => {
+    const { s, node } = drawingState(false);
+    start(s, pointerDownAt(x, y, node));
+    expect(s.drawable.shapes).toEqual([shape]);
+    expect(s.drawable.onChange).not.toHaveBeenCalled();
+  });
+});

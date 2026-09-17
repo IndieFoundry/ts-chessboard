@@ -195,7 +195,9 @@ export interface Config {
     visible?: boolean;
     /** Snap arrow endpoints to valid move squares */
     defaultSnapToValidMove?: boolean;
-    /** Erase shapes when clicking a movable piece */
+    /** Erase shapes on a left click on the board. Off when the host persists them. */
+    eraseOnClick?: boolean;
+    /** Erase shapes when clicking a movable piece (needs eraseOnClick) */
     eraseOnMovablePieceClick?: boolean;
     /** User-drawn shapes */
     shapes?: DrawShape[];
