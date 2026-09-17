@@ -1,6 +1,6 @@
 {
   "name": "@indiefoundry/chessboard",
-  "version": "1.3.6",
+  "version": "1.3.7",
   "description": "High-performance React chessboard component",
   "license": "MIT",
   "type": "module",
